@@ -1,0 +1,47 @@
+name: LaTeX Compilation Error
+description: pdflatex fails to compile a generated .tex file
+labels: ["bug", "latex"]
+body:
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Ubuntu/Debian
+        - macOS (MacTeX)
+        - macOS (BasicTeX)
+        - Windows (WSL)
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: texlive-version
+    attributes:
+      label: TeX Live Version
+      description: "Run `pdflatex --version` and paste the first line"
+      placeholder: "pdfTeX 3.14159265-2.6-1.40.25 (TeX Live 2024)"
+    validations:
+      required: true
+  - type: dropdown
+    id: template
+    attributes:
+      label: Which template failed?
+      options:
+        - Resume template
+        - Cover letter template
+        - Both
+    validations:
+      required: true
+  - type: textarea
+    id: error-output
+    attributes:
+      label: Error Output
+      description: "Paste the relevant error lines from pdflatex output"
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: "Anything else that might help (install method, packages you tried installing, etc.)"

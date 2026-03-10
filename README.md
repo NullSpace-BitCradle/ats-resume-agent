@@ -35,7 +35,7 @@ Install [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (Anthropic
 npm install -g @anthropic-ai/claude-code
 ```
 
-You need an Anthropic API key or a Claude Pro/Max subscription. See [Claude Code docs](https://docs.anthropic.com/en/docs/claude-code) for setup.
+You need an Anthropic API key or a Claude Pro/Max subscription. See [Claude Code docs](https://docs.anthropic.com/en/docs/claude-code) for setup. Each resume generation typically takes 30-60 seconds and uses roughly $0.05-0.15 in API tokens (Sonnet model).
 
 ### LaTeX (for PDF compilation)
 
