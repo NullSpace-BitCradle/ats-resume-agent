@@ -1,0 +1,29 @@
+# Output files
+output/*.pdf
+output/*.tex
+output/*.aux
+output/*.log
+output/*.out
+output/*.toc
+output/*.fls
+output/*.fdb_latexmk
+
+# LaTeX auxiliary files
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# Your personal career document (ACTIVE by default to prevent accidental PII commits)
+Master_Career_Document.md
+!examples/Master_Career_Document.md
+
+# Job descriptions with real company info
+Job_Description-*.md
+!examples/Job_Description-*.md
+
+# Claude Code local settings
+.claude/settings.local.json

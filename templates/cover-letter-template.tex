@@ -1,0 +1,80 @@
+%%%%
+% Cover Letter Template
+%%%%
+% License: MIT
+% Part of the ATS Resume Writer Agent project.
+%%%%
+
+\documentclass[11pt, letterpaper, roman]{letter}
+
+\usepackage[top = 12mm, bottom = 12mm, left=10mm, right=10mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{ragged2e}
+
+\usepackage[USenglish]{babel}
+\usepackage[stretch = 25, shrink = 25]{microtype}
+
+\usepackage{fontawesome}
+
+\usepackage{fancyhdr}
+
+\usepackage{enumitem}
+
+\usepackage{xcolor}
+\definecolor{cvteal}{HTML}{008080}
+\definecolor{cvblue}{HTML}{304263}
+\usepackage[colorlinks = true, urlcolor = black, linkcolor = white]{hyperref}
+
+\begin{document}
+
+\pagestyle{empty}
+\raggedbottom
+
+\begin{minipage}[t]{0.5\textwidth}
+    \vspace*{\fill}
+    \textsc{{\Huge Your Name}}
+    \vspace*{\fill}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.3\textwidth}
+    \setlength{\baselineskip}{15pt}
+    \RaggedLeft
+    \faMobile{} 123-456-7890\\
+    \faHome{} City, State\\
+    \faEnvelope{} you@example.com\\
+    \faLinkedinSquare{} in/yourprofile
+\end{minipage}
+
+{\color{cvteal} \rule{\linewidth}{1mm}}
+
+\begin{minipage}[t]{\textwidth}
+
+    \begin{letter}{Hiring Manager\\Company Name\\City, State}
+\setlength{\parskip}{5pt}
+\setlength{\baselineskip}{15pt}
+    \opening{Dear Hiring Manager,}
+
+    \begin{center}{\textbf{Position:} \underline{Job Title}}\end{center}
+
+\setlength{\parskip}{20pt}
+
+\justifying{
+    Opening paragraph: Connect your background to this specific role and company. Reference the job title and 1-2 things that make this role compelling. 3-4 sentences.
+
+    Body paragraph 1: Highlight 2-3 specific accomplishments from the master career document most relevant to this role. Use concrete details. 3-4 sentences.
+
+    Body paragraph 2: Address a specific requirement or challenge from the job description. Connect your experience directly to it. 3-4 sentences.
+
+    Closing paragraph: Express genuine interest, reference next steps, thank them for consideration. 2-3 sentences.
+}
+\end{letter}
+\end{minipage}
+
+\vspace*{\fill}
+{\color{cvteal} \rule{\linewidth}{1mm}}
+
+Yours sincerely,\\\textbf{Your Name}
+
+\vspace*{\fill}
+{\color{cvteal} \rule{\linewidth}{1mm}}
+\end{document}
