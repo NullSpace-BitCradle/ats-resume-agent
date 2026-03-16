@@ -17,6 +17,14 @@
 - Updated example MCD to 18-section structure
 - Updated README with career-doc-builder documentation
 - Added career-doc-builder routing to CLAUDE.md
+- Added `setup.sh` dependency checker and installer
+- Updated Claude Code install command to official curl installer
+- Added "How the Career Document Builder Works" section to README
+- Added model settings documentation to README
+- Improved README flow and career-doc-builder description (resume/LinkedIn ingestion)
+- Resume writer: added Hybrid Strengths section mapping
+- Resume writer: removed invalid `\section{Certifications}` from template docs
+- Career-doc-builder: added save step to Re-Run Mode
 
 ## v1.0.0 -- Initial Release
 
