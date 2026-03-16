@@ -35,3 +35,13 @@ After generating each `.tex` file:
 > "Resume and cover letter for the [Company] file"
 
 Claude will handle the rest using the above process.
+
+## Master Career Document Builder
+
+When asked to build, create, or update a Master Career Document, use the **career-doc-builder** agent. This agent guides users through an interactive interview process to create or enrich their MCD.
+
+Usage examples:
+- "Help me build my career document"
+- "I need to create my master career document from my old resumes"
+- "Update my MCD with my new role"
+- "Review my career document for gaps"
