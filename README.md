@@ -1,8 +1,8 @@
 # ATS Resume Writer Agent for Claude Code
 
-> v1.0.0
+> v1.1.0
 
-An AI-powered resume and cover letter generator that uses [Claude Code](https://docs.anthropic.com/en/docs/claude-code) to create ATS-optimized, LaTeX-formatted resumes tailored to specific job descriptions.
+An AI-powered resume and cover letter generator that uses [Claude Code](https://docs.anthropic.com/en/docs/claude-code) to create ATS-optimized, LaTeX-formatted resumes tailored to specific job descriptions. Includes a guided career document builder for creating comprehensive Master Career Documents from scratch.
 
 **Zero fabrication policy:** The agent will never estimate metrics, suggest proxy numbers, or embellish your experience. If a quantified achievement isn't in your master document, it won't appear in the output. This is a hard constraint, not a suggestion.
 
@@ -35,7 +35,7 @@ Install [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (Anthropic
 npm install -g @anthropic-ai/claude-code
 ```
 
-You need an Anthropic API key or a Claude Pro/Max subscription. See [Claude Code docs](https://docs.anthropic.com/en/docs/claude-code) for setup. Each resume generation typically takes 30-60 seconds and uses roughly $0.05-0.15 in API tokens (Sonnet model).
+You need an Anthropic API key or a Claude Pro/Max subscription. See [Claude Code docs](https://docs.anthropic.com/en/docs/claude-code) for setup. Each resume generation typically uses the Sonnet model and takes 30-60 seconds. The career document builder interview takes longer depending on career complexity.
 
 ### LaTeX (for PDF compilation)
 
@@ -85,7 +85,15 @@ If you don't have LaTeX installed and don't want to install it locally, you can 
    cd ats-resume-agent
    ```
 
-2. **Create your Master Career Document:**
+2. **Create your Master Career Document** (choose one):
+
+   **Option A -- Guided interview (recommended):**
+   ```
+   Help me build my career document
+   ```
+   The `career-doc-builder` agent will walk you through an interactive interview, extracting your career history and producing a comprehensive 18-section MCD.
+
+   **Option B -- Manual:**
    ```bash
    cp examples/Master_Career_Document.md Master_Career_Document.md
    ```
@@ -148,6 +156,24 @@ Add the CloudBridge SSO migration project to the experience section
 Can you review this resume? I'm not getting callbacks
 ```
 
+### Build or Update Your Career Document
+
+The `career-doc-builder` agent guides you through creating a comprehensive Master Career Document via interactive interview:
+
+```
+Help me build my career document
+```
+
+It can also enrich an existing MCD:
+
+```
+Review my career document for gaps
+```
+
+```
+Update my MCD with my new role
+```
+
 ## Project Structure
 
 ```
@@ -158,7 +184,8 @@ ats-resume-agent/
 |-- .gitignore                # Excludes output files and personal documents
 |-- .claude/
 |   `-- agents/
-|       `-- ats-resume-writer.md   # The agent definition (preconfigured)
+|       |-- ats-resume-writer.md   # Resume/cover letter generation agent
+|       `-- career-doc-builder.md  # Interactive career document builder agent
 |-- images/                        # Screenshots for README
 |-- templates/
 |   |-- resume-template.tex        # LaTeX resume template (CC-BY-4)
@@ -174,18 +201,24 @@ ats-resume-agent/
 
 ## Master Career Document Format
 
-Your career document is a Markdown file with these sections:
+The `career-doc-builder` agent produces a comprehensive 18-section MCD. You can also create one manually -- the resume writer agent handles both formats. Key sections:
 
 | Section | Purpose |
 |---------|---------|
 | **Contact Information** | Name, phone, email, LinkedIn, GitHub |
-| **Professional Summary** | 2-4 sentence career overview |
-| **Skills** | Categorized skill lists (languages, cloud, tools, etc.) |
-| **Professional Experience** | Roles with bullet-point achievements |
-| **Education** | Degrees and institutions |
-| **Certifications** | Professional certifications with dates |
-| **Projects** | Notable projects (open source, side projects) |
+| **Professional Identity & Positioning** | Target titles and core value proposition |
+| **Professional Summaries** | 2-4 different summary angles for different role types |
+| **Hybrid Strengths** | Cross-domain strengths (section name adapts to your field) |
+| **Core Competencies & Technical Skills** | Categorized skill lists with sub-categories |
+| **Industries Supported** | Industries served across your career |
+| **Work Experience** | Detailed roles with metrics and agent notes |
+| **Education & Training** | Degrees, courses, certifications, lab environments |
+| **Key Achievements & Metrics** | Curated highlight reel of strongest outcomes |
+| **Leadership & Soft Skills** | Leadership style, values, professional attributes |
+| **Notes for Resume Customization** | Positioning angles and metrics guidance by role type |
 | **Legacy & Historical Platforms** | Outdated skills to exclude from resumes |
+
+See `examples/Master_Career_Document.md` for the full 18-section structure with all available sections.
 
 ### Agent Notes
 
