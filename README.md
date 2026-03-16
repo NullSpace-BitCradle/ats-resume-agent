@@ -6,6 +6,8 @@ An AI-powered resume and cover letter generator built on [Claude Code](https://d
 
 **Zero fabrication policy:** The agent will never estimate metrics, suggest proxy numbers, or embellish your experience. If a quantified achievement isn't in your master document, it won't appear in the output. This is a hard constraint, not a suggestion.
 
+![The Zero-Fabrication Resume Workflow](images/Infographic.png)
+
 ## How It Works
 
 The project has two agents that work together:
