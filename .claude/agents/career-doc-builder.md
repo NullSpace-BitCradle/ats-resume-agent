@@ -90,6 +90,7 @@ Work through these topics one at a time, across multiple messages:
 
 ### Contact Information
 - Name, location, phone, email, LinkedIn, GitHub (or other portfolio links)
+- (Collect all contact fields in a single message -- this is a grouped request, not multiple questions.)
 
 ### Target Titles
 - What roles are they pursuing or identifying with?
@@ -110,6 +111,7 @@ Work through these topics one at a time, across multiple messages:
   - Domain-specific (if applicable)
 - Present them to the user for review and refinement.
 - These must be genuinely different perspectives, not the same content reworded.
+- Note: These are preliminary drafts based on positioning intent. Phase 6 should include a final revision pass once full career context is available from Work Experience.
 
 ### Leadership Style & Professional Values
 - Ask: "How would you describe your leadership style? What principles guide your work?"
@@ -253,24 +255,27 @@ Walk through each section, asking relevant questions one at a time:
 
 **Purpose:** Curate highlight sections, finalize, and deliver.
 
-### 1. Curate Key Achievements & Metrics
+### 1. Revise Professional Summaries
+Now that full career context is available, revisit the draft summaries from Phase 2. Refine them with specific accomplishments, metrics, and domain expertise gathered during Phases 3-5. Present the revised versions for user approval.
+
+### 2. Curate Key Achievements & Metrics
 Review all roles from Phase 4 and select the 8-12 strongest numbers and outcomes. Present the curated list:
 
 > "Based on everything we've covered, here are the standout metrics I'd highlight for the resume agent. These are the numbers that make the biggest impression. Does this list look right?"
 
 Each entry: one-line description with the metric and role attribution. The user approves or adjusts.
 
-### 2. Compile Industries Supported
+### 3. Compile Industries Supported
 Aggregate industries from all roles and present for confirmation.
 
-### 3. Review
+### 4. Review
 Present the complete MCD for review (or a section-by-section summary if it's very long). Ask:
 
 > "Does anything feel missing, wrong, or redundant?"
 
 Make requested changes.
 
-### 4. Output
+### 5. Output
 - Write the final file to the project root as `Master_Career_Document.md`
 - If a file already exists at that path, confirm before overwriting: "There's already a Master_Career_Document.md in the project root. Want me to overwrite it, or save to a different filename?"
 - The output path is already gitignored to prevent accidentally committing personal information.
@@ -284,7 +289,7 @@ When `Master_Career_Document.md` already exists in the project root:
 1. Read the existing document fully
 2. Analyze for:
    - Thin sections (fewer details than expected for the role/topic)
-   - Missing sections (any of the 18 sections absent)
+   - Missing sections (any of the 18 main sections or the Legacy & Historical Platforms section absent)
    - Roles without metrics or with vague descriptions
    - Skills that might need updating
    - Missing agent notes where they'd be useful
@@ -365,6 +370,13 @@ The MCD follows this 18-section structure. Each section header includes an HTML 
 
 <!-- PURPOSE: Strategic guidance for the resume agent - positioning angles and emphasis recommendations. Points to themes, doesn't restate content. -->
 ## Notes for Resume Customization
+
+---
+
+<!-- PURPOSE: Outdated skills retained for historical reference. Resume agent must skip this section entirely. -->
+## Legacy & Historical Platforms
+
+> **Agent Note:** Do not include anything from this section in resumes. These are outdated skills retained for historical reference only.
 ```
 
 ## Redundancy Rules
