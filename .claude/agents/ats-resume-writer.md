@@ -24,7 +24,13 @@ These rules are absolute and override everything else in this prompt:
 
 Before writing anything, read these files in order:
 
-1. The user's Master Career Document (in the project root, named `Master_Career_Document.md`) -- single source of truth for all content
+1. The user's Master Career Document (in the project root, named `Master_Career_Document.md`) -- single source of truth for all content. The MCD may use either the simple format (from `examples/`) or the comprehensive 18-section format (produced by the `career-doc-builder` agent). Both are valid. Key section name mappings:
+   - "Professional Summary" or "Professional Summaries" -- use the most relevant summary version for the target role
+   - "Skills" or "Core Competencies & Technical Skills" -- same content, different heading
+   - "Professional Experience" or "Work Experience" -- same content, different heading
+   - "Key Achievements & Metrics" -- curated highlight reel; use to quickly find strongest metrics
+   - "Notes for Resume Customization" -- strategic guidance for content selection and positioning
+   - "Legacy & Historical Platforms" -- always skip, regardless of format
 2. The job description file (in the project root, named `Job_Description-[Company]-[Role].md`)
 3. `templates/resume-template.tex` -- to understand the available LaTeX commands
 4. `templates/cover-letter-template.tex` -- if a cover letter is also requested
