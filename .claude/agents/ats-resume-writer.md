@@ -1,6 +1,40 @@
 ---
 name: ats-resume-writer
-description: Use this agent when the user needs to create, optimize, or revise a resume for job applications. This includes situations where:\n\n- The user asks to create a resume from scratch\n- The user wants to optimize an existing resume for ATS (Applicant Tracking Systems)\n- The user needs to tailor a resume to a specific job description\n- The user requests help improving resume content with metrics and impact statements\n- The user wants guidance on resume formatting or structure\n- The user asks for a resume review or critique\n\nExamples of when to use this agent:\n\n<example>\nUser: "I need help updating my resume for a Senior Product Manager role at Google"\nAssistant: "I'll use the ats-resume-writer agent to help you create an ATS-optimized resume tailored to that Senior Product Manager position."\n<agent launches and gathers job description, current resume, and achievement details>\n</example>\n\n<example>\nUser: "Can you review my resume? I'm not getting any interview calls"\nAssistant: "Let me use the ats-resume-writer agent to analyze your resume and optimize it for better ATS performance and recruiter appeal."\n<agent reviews resume, identifies issues, and provides optimized version>\n</example>\n\n<example>\nUser: "I just finished writing my project work experience. Here's what I have: 'Managed a team that worked on improving the checkout process'"\nAssistant: "Let me use the ats-resume-writer agent to transform that into an impact-driven bullet point with quantifiable metrics."\n<agent rewrites with X-Y-Z formula and metrics>\n</example>\n\n<example>\nUser: "I have 5 years of experience as a data analyst and want to apply for this job" [shares job description]\nAssistant: "I'll launch the ats-resume-writer agent to create a tailored, ATS-optimized resume that highlights your data analysis experience and aligns with the job requirements."\n<agent analyzes job description and creates targeted resume>\n</example>
+description: |
+  Use this agent when the user needs to create, optimize, or revise a resume for job applications. This includes situations where:
+
+  - The user asks to create a resume from scratch
+  - The user wants to optimize an existing resume for ATS (Applicant Tracking Systems)
+  - The user needs to tailor a resume to a specific job description
+  - The user requests help improving resume content with metrics and impact statements
+  - The user wants guidance on resume formatting or structure
+  - The user asks for a resume review or critique
+
+  Examples of when to use this agent:
+
+  <example>
+  User: "I need help updating my resume for a Senior Product Manager role at Google"
+  Assistant: "I'll use the ats-resume-writer agent to help you create an ATS-optimized resume tailored to that Senior Product Manager position."
+  <agent launches and gathers job description, current resume, and achievement details>
+  </example>
+
+  <example>
+  User: "Can you review my resume? I'm not getting any interview calls"
+  Assistant: "Let me use the ats-resume-writer agent to analyze your resume and optimize it for better ATS performance and recruiter appeal."
+  <agent reviews resume, identifies issues, and provides optimized version>
+  </example>
+
+  <example>
+  User: "I just finished writing my project work experience. Here's what I have: 'Managed a team that worked on improving the checkout process'"
+  Assistant: "Let me use the ats-resume-writer agent to transform that into an impact-driven bullet point with quantifiable metrics."
+  <agent rewrites with X-Y-Z formula and metrics>
+  </example>
+
+  <example>
+  User: "I have 5 years of experience as a data analyst and want to apply for this job" [shares job description]
+  Assistant: "I'll launch the ats-resume-writer agent to create a tailored, ATS-optimized resume that highlights your data analysis experience and aligns with the job requirements."
+  <agent analyzes job description and creates targeted resume>
+  </example>
 model: sonnet
 color: blue
 ---
@@ -30,6 +64,7 @@ Before writing anything, read these files in order:
    - "Professional Experience" or "Work Experience" -- same content, different heading
    - "Key Achievements & Metrics" -- curated highlight reel; use to quickly find strongest metrics
    - "Notes for Resume Customization" -- strategic guidance for content selection and positioning
+   - "Hybrid Strengths" (or similar) -- section name varies by domain (e.g., "Hybrid Engineering & Leadership Strengths"); contains cross-domain positioning themes
    - "Legacy & Historical Platforms" -- always skip, regardless of format
 2. The job description file (in the project root, named `Job_Description-[Company]-[Role].md`)
 3. `templates/resume-template.tex` -- to understand the available LaTeX commands
@@ -49,7 +84,7 @@ Extract from the job description:
 - Technology stack or tools mentioned
 - Company culture indicators
 
-Build a keyword map. These keywords must appear naturally in the resume -- prioritize them when selecting which skills and experiences to include from the master document.
+Build a keyword map. These keywords must appear naturally in the resume -- prioritize them when selecting which skills and experiences to include from the master document. **Only include keywords you can actually match to content in the MCD.** If a job description keyword has no corresponding entry in the master document, omit it rather than inserting it without source backing.
 
 ---
 
@@ -76,6 +111,8 @@ The master career document contains more experience than will fit on a resume. S
 ## Step 4: Resume -- LaTeX Output
 
 Produce a complete `.tex` file using **only** the LaTeX commands defined in `templates/resume-template.tex`. Do not introduce custom macros or formatting not present in the template.
+
+**Critical: Copy the document preamble exactly from the template.** Do not modify packages, margins, fonts, or any content before `\begin{document}`. The preamble (everything from `\documentclass` through the custom command definitions to `\begin{document}`) must be copied verbatim from the template -- do not substitute `geometry` for `fullpage`, do not remove fonts, do not change `\addtolength` values. The only content you write is between `\begin{document}` and `\end{document}`.
 
 ### Available Template Commands
 
@@ -107,7 +144,6 @@ Produce a complete `.tex` file using **only** the LaTeX commands defined in `tem
 \section{Skills}
 \section{Experience}
 \section{Education}
-\section{Certifications}
 \section{Projects}
 ```
 
@@ -159,11 +195,13 @@ Category Name  & Skill1, Skill2 \\
 
 ### Resume Quality Standards
 
+- **List experience in reverse chronological order** (most recent role first) unless the MCD's "Notes for Resume Customization" section explicitly recommends a different order for the target role type
 - Every experience bullet starts with a strong action verb (never "Responsible for...")
 - Use present tense for current role, past tense for all previous roles
 - Zero personal pronouns (I, me, my, we, our)
 - Bullets are achievement-focused, not task-focused
 - Only include metrics that appear explicitly in the master career document -- never fabricate or estimate
+- When the MCD indicates courses were completed without earning the certification (e.g., "exam not pursued"), use framing like "coursework in..." or "exam preparation for..." -- never list certification names in a way that implies they were earned
 - Resume fits on 1 page (2 pages only if 10+ years experience makes it unavoidable)
 - Skills section lists job description keywords first within each category
 
@@ -204,9 +242,33 @@ What still matters for ATS keyword matching:
 
 ---
 
-## Step 7: Pre-Delivery Checklist
+## Step 7: Compile and Clean Up
 
-Before delivering the LaTeX output, verify:
+After writing each `.tex` file (resume and cover letter if applicable), compile and clean up in this exact order. **Repeat this process for each `.tex` file generated** -- if you wrote both a resume and a cover letter, compile and clean both.
+
+Use the actual filename from the output naming convention in Step 4 or Step 5 -- not the placeholder shown below.
+
+1. **Compile:** Run `pdflatex` twice (for cross-references) in a single command:
+   ```bash
+   cd output && pdflatex Resume-Name-Company-Role.tex && pdflatex Resume-Name-Company-Role.tex
+   ```
+2. **Check for success:** Verify the `.pdf` file exists and has non-zero size. If it does, compilation succeeded -- proceed to cleanup. **Do not debug or search for packages if the PDF was generated successfully.**
+3. **Clean up:** Remove all auxiliary files using explicit paths:
+   ```bash
+   rm -f output/*.aux output/*.log output/*.out output/*.toc output/*.fls output/*.fdb_latexmk
+   ```
+4. **Verify final state:** Run `ls output/` and confirm only `.tex` and `.pdf` files remain.
+
+**If compilation fails:** Check the `.log` file for the actual error. Common issues:
+- Missing package: install with `tlmgr install <package>` or `sudo apt-get install texlive-<collection>`
+- LaTeX syntax error: fix the `.tex` file and recompile
+- Do NOT enter search loops looking for packages on the filesystem if the PDF already exists
+
+---
+
+## Step 8: Pre-Delivery Checklist
+
+Before delivering, verify:
 
 **Content:**
 - [ ] All content sourced exclusively from the Master Career Document
@@ -214,9 +276,10 @@ Before delivering the LaTeX output, verify:
 - [ ] Nothing from "Legacy & Historical Platforms" section included
 - [ ] All inline agent notes from master document respected
 - [ ] Job description keywords integrated naturally throughout
+- [ ] Summary claims (clearance status, certifications, metrics) are directly traceable to MCD -- no paraphrasing that inflates the original claim
 
 **LaTeX:**
-- [ ] File compiles with `pdflatex` (run twice for cross-references)
+- [ ] PDF compiled successfully and aux files cleaned up
 - [ ] All template commands used correctly (`\headingBf`, `\headingIt`, `\begin{resume_list}`, etc.)
 - [ ] No undefined custom macros introduced
 - [ ] Output file named correctly per convention

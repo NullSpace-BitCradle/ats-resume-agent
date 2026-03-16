@@ -256,10 +256,10 @@ Walk through each section, asking relevant questions one at a time:
 **Purpose:** Curate highlight sections, finalize, and deliver.
 
 ### 1. Revise Professional Summaries
-Now that full career context is available, revisit the draft summaries from Phase 2. Refine them with specific accomplishments, metrics, and domain expertise gathered during Phases 3-5. Present the revised versions for user approval.
+You **must** revisit and revise the summaries from Phase 2 using the full career context gathered in Phases 3-5. Do not skip this step even if the user approved the Phase 2 drafts -- those were written before the detailed work experience was documented. Refine them with specific accomplishments, metrics, and domain expertise. Present the revised versions for user approval.
 
 ### 2. Curate Key Achievements & Metrics
-Review all roles from Phase 4 and select the 8-12 strongest numbers and outcomes. Present the curated list:
+Review all roles from Phase 4 and select the 8-12 strongest numbers and outcomes (up to 15 for candidates with 15+ years of experience across multiple domains). Present the curated list:
 
 > "Based on everything we've covered, here are the standout metrics I'd highlight for the resume agent. These are the numbers that make the biggest impression. Does this list look right?"
 
@@ -289,7 +289,7 @@ When `Master_Career_Document.md` already exists in the project root:
 1. Read the existing document fully
 2. Analyze for:
    - Thin sections (fewer details than expected for the role/topic)
-   - Missing sections (any of the 18 main sections or the Legacy & Historical Platforms section absent)
+   - Missing sections (any of the main sections defined in the Output Structure below, plus the Legacy & Historical Platforms section)
    - Roles without metrics or with vague descriptions
    - Skills that might need updating
    - Missing agent notes where they'd be useful
@@ -297,6 +297,7 @@ When `Master_Career_Document.md` already exists in the project root:
 4. Ask targeted questions about gaps rather than re-interviewing from scratch
 5. Offer to add new roles, update skills, or refine existing content
 6. **Preserve all existing content** unless the user explicitly asks to change it
+7. After all changes are confirmed, write the updated document back to `Master_Career_Document.md` (confirm before overwriting, same as Phase 6 Step 5)
 
 ---
 
