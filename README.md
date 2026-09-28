@@ -191,6 +191,8 @@ The zero-fabrication promise is checked in code, not just in the prompt. The val
 
 These never count as a source: anything under a "Legacy & Historical Platforms" section (at any heading level), `> **Agent Note:**` lines (a note saying "never list CISSP" is not evidence of CISSP), HTML comments, link targets, and the table of contents.
 
+It also flags an unescaped `%` after a number (`34%` instead of `34\%`). LaTeX treats that `%` as the start of a comment, so the rest of the line silently disappears from the PDF even though `pdflatex` reports success.
+
 If the resume has a Skills section or a Certifications heading the validator cannot read (for example, skills written as plain text instead of the template's table), it reports a `coverage` finding instead of passing. An unfamiliar layout fails loudly; it never passes silently.
 
 The validator needs [Bun](https://bun.sh):

@@ -244,6 +244,11 @@ describe("cover letters", () => {
 });
 
 describe("LaTeX handling", () => {
+  test("an unescaped percent sign, which would cut the rest of the line from the PDF", () => {
+    const tex = plant("99.97\\% uptime", "99.97% uptime");
+    expect(validate(tex, mcd).findings.map((f) => `${f.kind}:${f.token}`)).toEqual(["latex:unescaped % after 7"]);
+  });
+
   test("comments, URLs, and phone href targets do not produce findings", () => {
     const tex = plant(
       "\\tinysection{Summary}",

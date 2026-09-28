@@ -11,7 +11,7 @@ import { findCommands, stripComments, stripLatex } from "./latex";
 
 export { stripLatex } from "./latex";
 
-export type Kind = "number" | "date" | "heading" | "certification" | "skill" | "coverage";
+export type Kind = "number" | "date" | "heading" | "certification" | "skill" | "coverage" | "latex";
 
 export interface Finding {
   kind: Kind;
@@ -293,6 +293,14 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
     rawLines.forEach((l, i) => checkNumbers(l, i + 1));
     return { findings, checked };
   }
+
+  // An unescaped % after a number starts a LaTeX comment: the rest of the line
+  // silently vanishes from the PDF while pdflatex still reports success.
+  const docLine = rawLines.findIndex((l) => l.includes("\\begin{document}"));
+  rawLines.forEach((l, i) => {
+    const m = l.match(/(?<!\\)(\d)%/);
+    if (m && i > docLine && !/^\s*%/.test(l)) flag("latex", `unescaped % after ${m[1]}`, i + 1);
+  });
 
   // Comments go first, so a commented-out \end{document} cannot end the window.
   const tex = stripComments(resume);
