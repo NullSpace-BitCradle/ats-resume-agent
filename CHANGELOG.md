@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Rewrote the resume writer prompt around its failure modes: the job description selects and emphasizes MCD content but never supplies it, the skills table gets an explicit check, LaTeX special characters must be escaped, and missing packages are reported instead of installed with sudo. The description no longer invites metric invention or asking the user for details. About 40 percent of the original length (118 lines, down from 304)
-- In the model comparison, Haiku went from 0 of 2 to 2 of 2 passing runs with the new prompt; Sonnet and Opus stayed at 2 of 2
+- In the model comparison, Haiku went from 1 of 4 passing runs with the original prompt to 4 of 4 with the new one; Sonnet and Opus passed every run with both
 
 ## v1.2.0: Checked zero fabrication, CI, and plugin install
 
