@@ -413,11 +413,11 @@ The LaTeX templates in `templates/` control the visual design:
 
 ### Adjusting Content Strategy
 
-The agent's content selection strategy, quality standards, and action verb lists are all defined in `.claude/agents/ats-resume-writer.md`. You can modify these to match your preferences. For example, changing the recency bias from 5-7 years to 10 years, or adjusting the page limit. If you plan to contribute the change, copy the file to `agents/` too; the plugin loads that copy, and CI checks the two match.
+The agent's content selection strategy and quality standards are defined in the "The resume" section of `.claude/agents/ats-resume-writer.md`. You can modify these to match your preferences. For example, changing the recency bias from 5-7 years to 10 years, or adjusting the page limit. If you plan to contribute the change, copy the file to `agents/` too; the plugin loads that copy, and CI checks the two match.
 
 ### Cover Letter Tone
 
-Edit the cover letter standards section in the agent definition to adjust tone, structure, or length preferences.
+Edit the "The cover letter" section of the agent definition to adjust tone, structure, or length preferences.
 
 ### Model Settings
 
@@ -431,15 +431,17 @@ These work the same for a plugin install, whose agent files keep the `model: son
 
 #### How models compare on this workflow
 
-On 2026-09-27, each model got the resume writer's instructions plus the example MCD and job description, with no sample output available to copy, and wrote the Example Corp resume twice. The validator scored each run:
+On 2026-09-27, each model got the resume writer's instructions plus the example MCD and job description, with no sample output available to copy, and wrote the Example Corp resume twice. These runs skipped the agent's own validator step, so they measure what the model writes before any check. The validator then scored each run. The same test ran against the original prompt and against the rewritten one:
 
-| Model | Runs passing | What failed |
-|-------|--------------|-------------|
-| Sonnet | 2 of 2 | nothing |
-| Opus | 2 of 2 | nothing |
-| Haiku | 0 of 2 | Kafka and "Event-Driven Architecture" added from the job description (1 run); unescaped `%` signs (both runs) |
+| Model | Original prompt | Rewritten prompt |
+|-------|-----------------|------------------|
+| Sonnet | 2 of 2 | 2 of 2 |
+| Opus | 2 of 2 | 2 of 2 |
+| Haiku | 0 of 2 | 2 of 2 |
 
-The failures are the ones the validator exists to catch. One Haiku run added Kafka, which appears only in the job description's tech stack. Both Haiku runs wrote `34%` instead of `34\%`, which silently cuts the rest of the line out of the PDF. Two runs per model is a small sample, so treat this as a smoke test rather than a benchmark. It is still enough to keep Haiku off the resume writer. Opus did no better than Sonnet on these checks and costs more, so Sonnet stays the default. Either way, always run the validator.
+With the original prompt, one Haiku run added Kafka, which appears only in the job description's tech stack, and both wrote `34%` instead of `34\%`, which silently cuts the rest of the line out of the PDF. The rewrite states that the job description never supplies content, puts a check on the skills table (where the padding happened), and requires escaping LaTeX special characters. Two more Haiku runs with the validator step turned on also passed, after fixing what it flagged.
+
+Two runs per model is a small sample, so treat this as a smoke test rather than a benchmark. Sonnet stays the default: Opus did no better on these checks and costs more. Either way, keep the validator step on.
 
 If you find the agents occasionally deviating from instructions (adding unsolicited content, ignoring agent notes), start a fresh session to avoid context pollution from previous conversations. Running plain `claude` always starts a new session (only `--continue` or `--resume` pick up an old one), and `/clear` wipes the context inside a session that is already open.
 
