@@ -56,6 +56,8 @@ These rules are absolute and override everything else in this prompt:
 
 ## Step 1: Read Source Files
 
+Paths to `templates/` and `tools/` below are relative to the project root. If the project has no `templates/` directory, this agent was installed as a Claude Code plugin: use `${CLAUDE_PLUGIN_ROOT}/templates/` and `${CLAUDE_PLUGIN_ROOT}/tools/` instead. The Master Career Document, job description, and `output/` always live in the project.
+
 Before writing anything, read these files in order:
 
 1. The user's Master Career Document (in the project root, named `Master_Career_Document.md`) -- single source of truth for all content. The MCD may use either the simple format (from `examples/`) or the comprehensive 18-section format (produced by the `career-doc-builder` agent). Both are valid. Key section name mappings:
