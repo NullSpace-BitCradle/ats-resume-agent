@@ -179,6 +179,26 @@ Add the CloudBridge SSO migration project to the experience section
 Can you review this resume? I'm not getting callbacks
 ```
 
+### Verify Zero Fabrication
+
+The zero-fabrication promise is checked in code, not just in the prompt. The validator reads a generated resume and your Master Career Document and fails if the resume contains anything the MCD does not back up:
+
+- **Numbers:** every number must appear in the MCD. Percentages must match a percentage, dollar amounts a dollar amount, and magnitudes like `2.3M` a matching `2.3M` or `2.3 million`.
+- **Dates:** each start and end date on a heading line.
+- **Employers, titles, and degrees:** the text of every `\headingBf` and `\headingIt` line.
+- **Certifications:** each item under the Certifications heading.
+- **Skills:** each item in the skills table. An acronym passes when the MCD spells out the phrase it stands for (`TDD` for Test-Driven Development).
+
+Anything under "Legacy & Historical Platforms" does not count as a source. The validator needs [Bun](https://bun.sh):
+
+```bash
+bun tools/validate.ts output/Resume-Your_Name-Company-Role.tex Master_Career_Document.md
+```
+
+It prints `PASS` and exits 0, or lists each unsupported claim with its line number and exits 1. It also works on plain text and cover letter `.tex` files, where it checks numbers only.
+
+What it cannot prove: it matches values, not sentences. If a number from one achievement shows up attached to a different achievement, the validator will not notice. Treat a PASS as "nothing was invented," not "every sentence is accurate," and still read the output.
+
 ### Build or Update Your Career Document
 
 The `career-doc-builder` agent guides you through creating a comprehensive Master Career Document via interactive interview:
@@ -218,12 +238,16 @@ ats-resume-agent/
 |-- LICENSE                   # MIT (project) + CC-BY-4 (LaTeX template)
 |-- CLAUDE.md                 # Instructions for Claude Code (you don't need to edit this)
 |-- setup.sh                  # Dependency checker and installer
+|-- package.json              # Bun scripts: validate, test
 |-- .gitignore                # Excludes output files and personal documents
 |-- .claude/
 |   `-- agents/
 |       |-- ats-resume-writer.md   # Resume/cover letter generation agent
 |       `-- career-doc-builder.md  # Interactive career document builder agent
 |-- images/                        # Screenshots for README
+|-- tools/
+|   |-- validate.ts                # Zero-fabrication validator
+|   `-- validate.test.ts           # Validator tests (bun test)
 |-- templates/
 |   |-- resume-template.tex        # LaTeX resume template (CC-BY-4)
 |   `-- cover-letter-template.tex  # LaTeX cover letter template
@@ -231,6 +255,7 @@ ats-resume-agent/
 |   |-- Master_Career_Document.md  # Example career doc with fake data
 |   |-- Job_Description-Example_Corp-Senior_Engineer.md  # Example JD
 |   `-- sample-output/
+|       |-- Resume-Alex_Morgan-Example_Corp-Senior_Engineer.tex  # Example generated resume
 |       |-- resume-preview.pdf     # Sample resume PDF
 |       `-- cover-letter-preview.pdf  # Sample cover letter PDF
 `-- output/                        # Generated resumes go here (gitignored)

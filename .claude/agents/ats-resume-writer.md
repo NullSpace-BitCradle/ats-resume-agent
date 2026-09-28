@@ -277,6 +277,7 @@ Before delivering, verify:
 - [ ] All inline agent notes from master document respected
 - [ ] Job description keywords integrated naturally throughout
 - [ ] Summary claims (clearance status, certifications, metrics) are directly traceable to MCD -- no paraphrasing that inflates the original claim
+- [ ] If `bun` is available, `bun tools/validate.ts output/<resume>.tex Master_Career_Document.md` prints PASS. Any claim it lists must be removed or corrected from the MCD, never added to the MCD, then recompile and rerun
 
 **LaTeX:**
 - [ ] PDF compiled successfully and aux files cleaned up

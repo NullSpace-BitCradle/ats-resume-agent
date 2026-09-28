@@ -1,0 +1,9 @@
+{
+  "name": "ats-resume-agent",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "bun tools/validate.ts",
+    "test": "bun test tools/"
+  }
+}
