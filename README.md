@@ -313,7 +313,7 @@ ats-resume-agent/
 |-- README.md                 # This file
 |-- CHANGELOG.md              # Release notes
 |-- CONTRIBUTING.md           # How to contribute
-|-- LICENSE                   # MIT (project) + CC-BY-4 (LaTeX template)
+|-- LICENSE                   # MIT
 |-- CLAUDE.md                 # Instructions for Claude Code (you don't need to edit this)
 |-- setup.sh                  # Dependency checker and installer
 |-- package.json              # Bun scripts: validate, export, test
@@ -337,6 +337,7 @@ ats-resume-agent/
 |   `-- *.test.ts                  # Tests (bun test)
 |-- templates/
 |   |-- resume-template.tex        # LaTeX resume template (CC-BY-4)
+|   |-- LICENSE-CC-BY-4.0.md       # License notice for the resume template
 |   `-- cover-letter-template.tex  # LaTeX cover letter template
 |-- examples/
 |   |-- Master_Career_Document.md  # Example career doc with fake data
@@ -446,7 +447,7 @@ If you find the agents occasionally deviating from instructions (adding unsolici
 
 This project is licensed under the [MIT License](LICENSE).
 
-The LaTeX resume template (`templates/resume-template.tex`) is based on work by [Michael Lustfield](https://github.com/mtecknology) and is licensed under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/legalcode.txt).
+The LaTeX resume template (`templates/resume-template.tex`) is based on work by [Michael Lustfield](https://github.com/mtecknology) and is licensed under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/legalcode.txt). See [templates/LICENSE-CC-BY-4.0.md](templates/LICENSE-CC-BY-4.0.md).
 
 ## Acknowledgments
 
