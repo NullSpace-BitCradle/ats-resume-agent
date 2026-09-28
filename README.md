@@ -183,21 +183,39 @@ Can you review this resume? I'm not getting callbacks
 
 The zero-fabrication promise is checked in code, not just in the prompt. The validator reads a generated resume and your Master Career Document and fails if the resume contains anything the MCD does not back up:
 
-- **Numbers:** every number must appear in the MCD. Percentages must match a percentage, dollar amounts a dollar amount, and magnitudes like `2.3M` a matching `2.3M` or `2.3 million`.
-- **Dates:** each start and end date on a heading line.
-- **Employers, titles, and degrees:** the text of every `\headingBf` and `\headingIt` line.
-- **Certifications:** each item under the Certifications heading.
-- **Skills:** each item in the skills table. An acronym passes when the MCD spells out the phrase it stands for (`TDD` for Test-Driven Development).
+- **Numbers:** every number, including spelled-out ones like "fifteen" or "12 million", must appear in the MCD. Percentages must match a percentage, money must match money in the same currency, and scaled values must match by value, so `2.3M`, `2.3 million`, and `2,300,000` are interchangeable, but a bare `3` does not back `3M`.
+- **Dates:** each start and end date on a heading line. `Mar 2022`, `March 2022`, and `03/2022` count as the same date, and so do Present and Current.
+- **Employers, titles, and degrees:** the text of every `\headingBf`, `\headingIt`, and `\heading` line, plus client names in `\itemTitle{Client: ...}`. Common degree abbreviations (`B.S.`, `MBA`, `Ph.D.`) match the spelled-out degree.
+- **Certifications:** each item under a Certifications heading or section. The name, issuer, and year must appear together on one line of the MCD, so a real certification with a shifted year still fails.
+- **Skills:** each item in the skills table, including rows that wrap across lines. An acronym passes when the MCD spells out the phrase it stands for (`TDD` for Test-Driven Development), and `AWS (EC2, Lambda)` in the MCD backs `AWS Lambda`.
 
-Anything under "Legacy & Historical Platforms" does not count as a source. The validator needs [Bun](https://bun.sh):
+These never count as a source: anything under a "Legacy & Historical Platforms" section (at any heading level), `> **Agent Note:**` lines (a note saying "never list CISSP" is not evidence of CISSP), HTML comments, link targets, and the table of contents.
+
+If the resume has a Skills section or a Certifications heading the validator cannot read (for example, skills written as plain text instead of the template's table), it reports a `coverage` finding instead of passing. An unfamiliar layout fails loudly; it never passes silently.
+
+The validator needs [Bun](https://bun.sh):
 
 ```bash
 bun tools/validate.ts output/Resume-Your_Name-Company-Role.tex Master_Career_Document.md
 ```
 
-It prints `PASS` and exits 0, or lists each unsupported claim with its line number and exits 1. It also works on plain text and cover letter `.tex` files, where it checks numbers only.
+It prints `PASS` and exits 0, or lists each unsupported claim with its line number and exits 1. Files that don't end in `.tex` are read as plain text (like the [plain-text export](#plain-text-export)), and only their numbers are checked.
 
-What it cannot prove: it matches values, not sentences. If a number from one achievement shows up attached to a different achievement, the validator will not notice. Treat a PASS as "nothing was invented," not "every sentence is accurate," and still read the output.
+**Cover letters** can name the company, the role, and facts from the job posting, so pass the job description as an extra source:
+
+```bash
+bun tools/validate.ts output/CoverLetter-Your_Name-Company-Role.tex Master_Career_Document.md Job_Description-Company-Role.md
+```
+
+Never pass the job description when checking a resume. Everything on a resume has to come from your own history, and a job posting's tech stack is exactly where padded skills come from.
+
+What it cannot prove:
+
+- **It matches values, not sentences.** If a real number, title, or date shows up attached to the wrong role, the validator will not notice.
+- **Synonyms fail.** If the MCD says PostgreSQL and the resume says Postgres, it fails. The fix is to add the term to your MCD if it's true.
+- **Prose isn't parsed for names.** An employer mentioned only in the summary paragraph isn't checked.
+
+Treat a PASS as "nothing was invented," not "every sentence is accurate," and still read the output.
 
 ### Build or Update Your Career Document
 
@@ -247,6 +265,7 @@ ats-resume-agent/
 |-- images/                        # Screenshots for README
 |-- tools/
 |   |-- validate.ts                # Zero-fabrication validator
+|   |-- latex.ts                   # Shared LaTeX parsing helpers
 |   `-- validate.test.ts           # Validator tests (bun test)
 |-- templates/
 |   |-- resume-template.tex        # LaTeX resume template (CC-BY-4)
@@ -256,6 +275,7 @@ ats-resume-agent/
 |   |-- Job_Description-Example_Corp-Senior_Engineer.md  # Example JD
 |   `-- sample-output/
 |       |-- Resume-Alex_Morgan-Example_Corp-Senior_Engineer.tex  # Example generated resume
+|       |-- CoverLetter-Alex_Morgan-Example_Corp-Senior_Engineer.tex  # Example cover letter
 |       |-- resume-preview.pdf     # Sample resume PDF
 |       `-- cover-letter-preview.pdf  # Sample cover letter PDF
 `-- output/                        # Generated resumes go here (gitignored)

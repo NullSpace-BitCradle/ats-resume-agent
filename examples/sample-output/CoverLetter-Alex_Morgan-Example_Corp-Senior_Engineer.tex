@@ -1,0 +1,80 @@
+%%%%
+% Cover Letter Template
+%%%%
+% License: MIT
+% Part of the ATS Resume Writer Agent project.
+%%%%
+
+\documentclass[11pt, letterpaper, roman]{letter}
+
+\usepackage[top = 12mm, bottom = 12mm, left=10mm, right=10mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{ragged2e}
+
+\usepackage[USenglish]{babel}
+\usepackage[stretch = 25, shrink = 25]{microtype}
+
+\usepackage{fontawesome}
+
+\usepackage{fancyhdr}
+
+\usepackage{enumitem}
+
+\usepackage{xcolor}
+\definecolor{cvteal}{HTML}{008080}
+\definecolor{cvblue}{HTML}{304263}
+\usepackage[colorlinks = true, urlcolor = black, linkcolor = white]{hyperref}
+
+\begin{document}
+
+\pagestyle{empty}
+\raggedbottom
+
+\begin{minipage}[t]{0.5\textwidth}
+    \vspace*{\fill}
+    \textsc{{\Huge Alex Morgan}}
+    \vspace*{\fill}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.3\textwidth}
+    \setlength{\baselineskip}{15pt}
+    \RaggedLeft
+    \faMobile{} (555) 867-5309\\
+    \faHome{} Austin, TX\\
+    \faEnvelope{} alex.morgan@example.com\\
+    \faLinkedinSquare{} in/alex-morgan-example
+\end{minipage}
+
+{\color{cvteal} \rule{\linewidth}{1mm}}
+
+\begin{minipage}[t]{\textwidth}
+
+    \begin{letter}{Hiring Manager\\Example Corp\\Remote (US)}
+\setlength{\parskip}{5pt}
+\setlength{\baselineskip}{15pt}
+    \opening{Dear Hiring Manager,}
+
+    \begin{center}{\textbf{Position:} \underline{Senior Software Engineer, Platform Team}}\end{center}
+
+\setlength{\parskip}{20pt}
+
+\justifying{
+    The Senior Software Engineer role on Example Corp's Platform Team is a direct match for the work I have spent the past several years building toward. Scaling backend services for an e-commerce platform serving 50M+ monthly active users is precisely the kind of infrastructure challenge I find most compelling, and Go and Python on AWS are the tools I work with every day.
+
+    At Stellar Technologies I led the migration of a monolithic Python application into 12 Go microservices, reducing average API latency from 340ms to 45ms. Alongside that, I architected an event-driven order processing pipeline handling 2.3 million transactions per day at 99.97\% uptime, and reduced AWS infrastructure costs by 34\% (\$180K annually) by right-sizing EC2 instances and shifting batch workloads to Lambda. These are not isolated wins. They reflect a consistent focus on building systems that scale reliably and cost-effectively.
+
+    Example Corp's emphasis on developer experience and platform-wide architectural leadership matches how I have worked in practice. I established Datadog observability standards across our services, cutting mean-time-to-detection from 23 minutes to 4 minutes, and mentored 4 junior engineers through structured code review with 2 earning promotions within 18 months. On the infrastructure side, I hold both the AWS Solutions Architect -- Associate and Certified Kubernetes Administrator certifications, and I have hands-on experience with Terraform, GitHub Actions CI/CD pipelines, and containerized workloads on Kubernetes.
+
+    I would welcome the opportunity to discuss how my background maps to what the Platform Team is building. Thank you for your time and consideration.
+}
+\end{letter}
+\end{minipage}
+
+\vspace*{\fill}
+{\color{cvteal} \rule{\linewidth}{1mm}}
+
+Yours sincerely,\\\textbf{Alex Morgan}
+
+\vspace*{\fill}
+{\color{cvteal} \rule{\linewidth}{1mm}}
+\end{document}
