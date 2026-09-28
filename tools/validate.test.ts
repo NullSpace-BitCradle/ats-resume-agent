@@ -440,6 +440,11 @@ describe("honest output passes", () => {
     expect(validate(resume, moved).findings).toEqual([]);
   });
 
+  test("a certification year on a lazy continuation line", () => {
+    const lazy = mcd.replace("- AWS Solutions Architect -- Associate (2023)", "- AWS Solutions Architect -- Associate\nIssued 2023");
+    expect(validate(resume, lazy).findings).toEqual([]);
+  });
+
   test("the MCD's own blank-line and multi-line layouts still back honest output", () => {
     const spread = mcd.replace(
       "- **University of Texas at Austin**\n  Bachelor of Science in Computer Science | Graduated May 2017\n  - Minor: Mathematics",
@@ -505,6 +510,14 @@ describe("cover letters", () => {
       ["I would welcome", "The \\$3,000 learning budget stood out. I would welcome"],
     ]) {
       expect(validate(cover.replace(from, to), mcd, { extraSources: [jd] }).findings).toEqual([]);
+    }
+  });
+
+  test("a letter date on its own line right above the salutation, or ending in \\\\", () => {
+    for (const d of ["September 27, 2026", "2026-09-27", "Sunday, September 27, 2026", "September 27, 2026\\\\"]) {
+      const dated = cover.replace("    \\opening{", `\n${d}\n    \\opening{`);
+      expect(dated).toContain(d);
+      expect(validate(dated, mcd, { extraSources: [jd] }).findings).toEqual([]);
     }
   });
 

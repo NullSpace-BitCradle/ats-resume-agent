@@ -211,7 +211,7 @@ bun tools/validate.ts output/CoverLetter-Your_Name-Company-Role.tex Master_Caree
 
 A number that only the job description backs has to keep its context: the letter's sentence must share a word with the posting's sentence. `serving 50M+ users` passes against "serving 50M+ monthly active users", but `mentored 5 junior engineers` does not pass just because the posting asks for "5+ years". Close paraphrases can still fail (`the 5-year requirement` shares no word with `5+ years`); reword or leave the number out.
 
-The letter's own date is skipped when it sits on a line of its own or after `\hfill` at the end of a line. A date inside a sentence is still checked, and resumes never skip dates.
+The letter's own date is skipped when it sits on a line of its own that starts a paragraph (after a blank line, and followed by a blank line, a `\\` break, or the salutation), or after `\hfill` at the end of a line. A date inside a sentence is still checked, and resumes never skip dates.
 
 The validator refuses extra sources for a file with resume structure. Everything on a resume has to come from your own history, and a job posting's tech stack is exactly where padded skills come from.
 

@@ -258,8 +258,9 @@ const DAY_DATE =
   `(?:(?:mon|tues|wednes|thurs|fri|satur|sun)day,?\\s+)?(?:${MONTH_NAME}\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?,?\\s+\\d{4}` +
   `|\\d{1,2}(?:st|nd|rd|th)?\\s+${MONTH_NAME}\\.?,?\\s+\\d{4}|\\d{1,2}/\\d{1,2}/\\d{4}|\\d{4}-\\d{2}-\\d{2})`;
 // The letter's own date: a line that is only a date, or a date after \hfill at
-// the end of a line ("Austin, TX \hfill September 27, 2026").
-const LETTER_DATE = new RegExp(`(^|\\\\hfill)\\s*${DAY_DATE}\\s*$`, "i");
+// the end of a line ("Austin, TX \hfill September 27, 2026"), optionally
+// followed by a \\ line break.
+const LETTER_DATE = new RegExp(`(^|\\\\hfill)\\s*${DAY_DATE}\\s*(?:\\\\\\\\)?\\s*$`, "i");
 
 // "Mar 2022", "March 2022", and "03/2022" all compare equal; so do Present and Current.
 function canonDates(s: string): string {
@@ -345,7 +346,7 @@ interface Scope {
 
 // Source scopes as nested ranges: every markdown heading with its sub-headings,
 // and every bullet (at any indent) with the lines indented deeper than its
-// marker. Blank lines don't end a bullet.
+// marker, plus lazy continuation lines. Blank lines don't end a bullet.
 function scopes(text: string): { sections: Scope[]; entries: Scope[] } {
   const lines = text.split("\n");
   const indent = (l: string) => l.search(/\S/);
@@ -361,7 +362,10 @@ function scopes(text: string): { sections: Scope[]; entries: Scope[] } {
     }
     if (/^\s*[-*+]\s/.test(line)) {
       let j = i + 1;
-      while (j < lines.length && !/^#{1,6}\s/.test(lines[j]) && (!lines[j].trim() || indent(lines[j]) > indent(line))) j++;
+      // Markdown's lazy continuation: an unindented line directly after a
+      // non-blank line, and not itself a bullet, still belongs to the bullet.
+      const lazy = (k: number) => lines[k - 1].trim() && !/^\s*[-*+]\s/.test(lines[k]);
+      while (j < lines.length && !/^#{1,6}\s/.test(lines[j]) && (!lines[j].trim() || indent(lines[j]) > indent(line) || lazy(j))) j++;
       entries.push(make(i, j));
     }
   });
@@ -530,9 +534,13 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
     let offset = 0;
     bodyLines.forEach((line, k) => {
       const m = stripComments(line).match(LETTER_DATE);
-      // Skip it only after \hfill, or when the date is a paragraph of its own;
-      // a date on a wrapped line inside a sentence is still checked.
-      if (m && (m[1] || (empty(k - 1) && empty(k + 1)))) blank(offset + m.index! + m[1].length, offset + line.length);
+      // Skip it only after \hfill, or when the date starts a paragraph and
+      // ends it, ends in \\, or sits right above the salutation. A date on a
+      // wrapped line inside a sentence is still checked.
+      const ownLine =
+        empty(k - 1) &&
+        (empty(k + 1) || /\\\\\s*$/.test(stripComments(line)) || /^\s*\\(?:opening|begin\{letter\})/.test(bodyLines[k + 1] ?? ""));
+      if (m && (m[1] || ownLine)) blank(offset + m.index! + m[1].length, offset + line.length);
       offset += line.length + 1;
     });
   }
