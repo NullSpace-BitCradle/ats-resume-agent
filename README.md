@@ -398,11 +398,11 @@ Edit the cover letter standards section in the agent definition to adjust tone, 
 
 Both agents default to Sonnet (`model: sonnet` in each agent file's frontmatter). You can pick a different model in any of these ways, from most specific to least:
 
-- **Per request:** name the model when you ask, such as "use the ats-resume-writer agent on Opus for the Example Corp file." A model named in the request wins over everything else.
+- **Per request:** name the model when you ask, such as "use the ats-resume-writer agent on Opus for the Example Corp file." A model named in the request wins over the other two settings below.
 - **Per agent:** change the `model:` line at the top of `.claude/agents/ats-resume-writer.md` or `.claude/agents/career-doc-builder.md`. It takes an alias (`sonnet`, `opus`, `haiku`), a full model ID, or `inherit` to use whatever model your main session runs.
-- **For every subagent:** set `CLAUDE_CODE_SUBAGENT_MODEL` (for example, to `opus`) in your environment or in the `env` block of your Claude Code settings. It applies to agents with no `model:` line. Add `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` to override the `model:` lines as well.
+- **For every subagent:** set `CLAUDE_CODE_SUBAGENT_MODEL` (for example, to `opus`) in your environment or in the `env` block of your Claude Code settings. It applies to agents with no `model:` line. Adding `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` makes it win over everything: the `model:` lines are ignored, and a model named per request is too.
 
-**Plugin installs work differently.** Claude Code ignores the `model:` field in plugin agents, so with the plugin the agents run on your main session's model unless you name one per request or set `CLAUDE_CODE_SUBAGENT_MODEL`. See [choosing a subagent's model](https://code.claude.com/docs/en/sub-agents).
+These work the same for a plugin install, whose agent files keep the `model: sonnet` line. See [choosing a subagent's model](https://code.claude.com/docs/en/sub-agents).
 
 #### How models compare on this workflow
 
