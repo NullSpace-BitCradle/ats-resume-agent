@@ -11,8 +11,8 @@ Thanks for your interest in contributing to ats-resume-agent.
 
 1. Open an issue first to discuss the change
 2. Fork the repo and create a branch from `master`
-3. Keep changes focused -- one feature or fix per PR
-4. Test that both templates compile with `pdflatex`
+3. Keep changes focused: one feature or fix per PR
+4. Run `bun test tools/` and check that both templates compile with `pdflatex`. CI runs both on every PR, and a PR merges only when CI is green
 
 ## What's in Scope
 
@@ -20,6 +20,7 @@ Thanks for your interest in contributing to ats-resume-agent.
 - Documentation clarifications
 - New LaTeX template variants
 - Agent definition improvements
+- Validator and export improvements, with a test that fails before the change
 
 ## Editing the Agents
 

@@ -1,10 +1,12 @@
 # ATS Resume Writer Agent for Claude Code
 
-> v1.1.0
+[![CI](https://github.com/NullSpace-BitCradle/ats-resume-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/NullSpace-BitCradle/ats-resume-agent/actions/workflows/ci.yml)
+
+> v1.2.0. Prefer the original? It is preserved as the [v1.1.0 release](https://github.com/NullSpace-BitCradle/ats-resume-agent/releases/tag/v1.1.0) and the [`v1` branch](https://github.com/NullSpace-BitCradle/ats-resume-agent/tree/v1). See [CHANGELOG.md](CHANGELOG.md) for what changed.
 
 An AI-powered resume and cover letter generator built on [Claude Code](https://code.claude.com/docs). It creates ATS-optimized, LaTeX-formatted resumes tailored to specific job descriptions. It also includes a guided career document builder that helps you create the source material through an interactive interview.
 
-**Zero fabrication policy:** The agent will never estimate metrics, suggest proxy numbers, or embellish your experience. If a quantified achievement isn't in your master document, it won't appear in the output. This is a hard constraint, not a suggestion.
+**Zero fabrication policy:** The agent will never estimate metrics, suggest proxy numbers, or embellish your experience. If a quantified achievement isn't in your master document, it won't appear in the output. This is a hard constraint, not a suggestion, and a [validator](#verify-zero-fabrication) checks it in code.
 
 ![The Zero-Fabrication Resume Workflow](images/Infographic.png)
 
@@ -21,6 +23,9 @@ The typical flow:
 2. Drop a job description file into the project
 3. Tell Claude to generate a resume
 4. The agent selects the most relevant content, maps keywords, and produces a polished PDF
+5. The validator confirms every checked claim traces to your MCD, and an optional plain-text export gives you a copy for application forms
+
+You can use it from a clone of this repository or install it as a [Claude Code plugin](#install-as-a-plugin).
 
 ### Sample Output
 
@@ -77,6 +82,16 @@ sudo tlmgr install fontawesome5 fontawesome CormorantGaramond charter \
 ```
 
 **Important:** The resume template uses `fontawesome5` and the cover letter template uses `fontawesome`. These are separate packages, and both must be installed for full functionality.
+
+### Bun (for the validator and text export)
+
+The [zero-fabrication validator](#verify-zero-fabrication) and the [plain-text export](#plain-text-export) run on [Bun](https://bun.com). Resume generation works without it, but the agent skips those two steps. On macOS, Linux, or WSL:
+
+```bash
+curl -fsSL https://bun.com/install | bash
+```
+
+See the [Bun installation docs](https://bun.com/docs/installation) for Windows and other options.
 
 <details>
 <summary>Troubleshooting LaTeX packages</summary>
@@ -182,6 +197,8 @@ The agent will:
 3. Select the most relevant experience and skills
 4. Generate a `.tex` file with ATS-optimized content
 5. Compile it to PDF using `pdflatex`
+6. Run the validator and fix any claim it flags (if Bun is installed)
+7. Write a plain-text copy for application forms (if Bun is installed)
 
 Output files are saved to the `output/` directory.
 
@@ -217,7 +234,7 @@ It also flags an unescaped `%` after a number (`34%` instead of `34\%`). LaTeX t
 
 If the resume has a skills section (Skills, Core Competencies, Technical Proficiencies, and similar names) or a certifications heading the validator cannot read, for example skills written as plain text instead of the template's table, it reports a `coverage` finding instead of passing. An unfamiliar layout fails loudly; it never passes silently.
 
-The validator needs [Bun](https://bun.sh):
+The validator needs [Bun](#bun-for-the-validator-and-text-export):
 
 ```bash
 bun tools/validate.ts output/Resume-Your_Name-Company-Role.tex Master_Career_Document.md
@@ -294,14 +311,18 @@ The output is a single Markdown file with 18 structured sections. The interview 
 ```
 ats-resume-agent/
 |-- README.md                 # This file
+|-- CHANGELOG.md              # Release notes
+|-- CONTRIBUTING.md           # How to contribute
 |-- LICENSE                   # MIT (project) + CC-BY-4 (LaTeX template)
 |-- CLAUDE.md                 # Instructions for Claude Code (you don't need to edit this)
 |-- setup.sh                  # Dependency checker and installer
-|-- package.json              # Bun scripts: validate, test
+|-- package.json              # Bun scripts: validate, export, test
 |-- agents/                   # Same agents, in the plugin layout (kept identical by CI)
 |-- .claude-plugin/
-|   |-- plugin.json           # Plugin manifest (agents, metadata)
+|   |-- plugin.json           # Plugin manifest (name, version, metadata)
 |   `-- marketplace.json      # Lets /plugin marketplace add install from this repo
+|-- .github/
+|   `-- workflows/ci.yml      # Validator tests, LaTeX build, plugin install check
 |-- .gitignore                # Excludes output files and personal documents
 |-- .claude/
 |   `-- agents/
@@ -322,8 +343,8 @@ ats-resume-agent/
 |   `-- sample-output/
 |       |-- Resume-Alex_Morgan-Example_Corp-Senior_Engineer.tex  # Example generated resume
 |       |-- CoverLetter-Alex_Morgan-Example_Corp-Senior_Engineer.tex  # Example cover letter
-|       |-- resume-preview.pdf     # Sample resume PDF
-|       `-- cover-letter-preview.pdf  # Sample cover letter PDF
+|       |-- resume-preview.pdf     # Blank resume template, rendered
+|       `-- cover-letter-preview.pdf  # Blank cover letter template, rendered
 `-- output/                        # Generated resumes go here (gitignored)
 ```
 
@@ -360,7 +381,7 @@ The agent treats these as binding instructions and will respect them when genera
 
 ### Legacy Section
 
-Any content under a "Legacy & Historical Platforms" heading is automatically excluded from all generated resumes. Use this for outdated skills you want to keep on record but never include in applications.
+Any content under a "Legacy & Historical Platforms" heading is automatically excluded from all generated resumes, and the validator never counts it as a source. Titles like "Legacy Skills" or "Deprecated Skills" work the same way. Use this for outdated skills you want to keep on record but never include in applications.
 
 ## Key Design Decisions
 
@@ -369,6 +390,8 @@ Any content under a "Legacy & Historical Platforms" heading is automatically exc
 **Keyword-first content selection:** The agent builds a keyword map from each job description and prioritizes matching content from your career document. Skills sections list job-description keywords first within each category.
 
 **One source of truth:** All content comes from the Master Career Document. The agent never asks you for information during generation. It reads the files and produces output.
+
+**Checked, not trusted:** The prompt tells the agent not to fabricate, and the validator checks that it didn't. CI runs the validator tests, builds every template and example with `pdflatex`, and installs the plugin on every push.
 
 ## Customization
 
@@ -388,7 +411,7 @@ The LaTeX templates in `templates/` control the visual design:
 
 ### Adjusting Content Strategy
 
-The agent's content selection strategy, quality standards, and action verb lists are all defined in `.claude/agents/ats-resume-writer.md`. You can modify these to match your preferences. For example, changing the recency bias from 5-7 years to 10 years, or adjusting the page limit.
+The agent's content selection strategy, quality standards, and action verb lists are all defined in `.claude/agents/ats-resume-writer.md`. You can modify these to match your preferences. For example, changing the recency bias from 5-7 years to 10 years, or adjusting the page limit. If you plan to contribute the change, copy the file to `agents/` too; the plugin loads that copy, and CI checks the two match.
 
 ### Cover Letter Tone
 
