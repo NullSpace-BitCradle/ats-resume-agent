@@ -78,10 +78,10 @@ for dep in "${missing[@]}"; do
             read -rp "Install Claude Code? [y/N] " yn
             if [[ "$yn" =~ ^[Yy]$ ]]; then
                 echo "Installing Claude Code..."
-                curl -fsSL https://install.anthropic.com | sh
+                curl -fsSL https://claude.ai/install.sh | bash
                 ok "Claude Code installed"
             else
-                warn "Skipped Claude Code (install later: curl -fsSL https://install.anthropic.com | sh)"
+                warn "Skipped Claude Code (install later: curl -fsSL https://claude.ai/install.sh | bash)"
             fi
             ;;
         pdflatex)
@@ -103,7 +103,7 @@ for dep in "${missing[@]}"; do
                     warn "Skipped LaTeX (install later: sudo apt-get install texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra)"
                 fi
             else
-                warn "Could not detect package manager. Install pdflatex manually -- see README for instructions."
+                warn "Could not detect package manager. Install pdflatex manually. See README for instructions."
             fi
             ;;
         texpackages)

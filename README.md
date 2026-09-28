@@ -2,7 +2,7 @@
 
 > v1.1.0
 
-An AI-powered resume and cover letter generator built on [Claude Code](https://docs.anthropic.com/en/docs/claude-code). It creates ATS-optimized, LaTeX-formatted resumes tailored to specific job descriptions -- and includes a guided career document builder that helps you create the source material through an interactive interview.
+An AI-powered resume and cover letter generator built on [Claude Code](https://code.claude.com/docs). It creates ATS-optimized, LaTeX-formatted resumes tailored to specific job descriptions. It also includes a guided career document builder that helps you create the source material through an interactive interview.
 
 **Zero fabrication policy:** The agent will never estimate metrics, suggest proxy numbers, or embellish your experience. If a quantified achievement isn't in your master document, it won't appear in the output. This is a hard constraint, not a suggestion.
 
@@ -12,8 +12,8 @@ An AI-powered resume and cover letter generator built on [Claude Code](https://d
 
 The project has two agents that work together:
 
-1. **Career Document Builder** -- Guides you through an interactive interview to create a comprehensive Master Career Document. It can also ingest existing resumes, LinkedIn profile exports, or any career materials you already have as a starting point.
-2. **Resume Writer** -- Takes your Master Career Document and a job description, then produces a tailored LaTeX resume optimized for Applicant Tracking Systems. You run this each time you apply somewhere.
+1. **Career Document Builder**: guides you through an interactive interview to create a comprehensive Master Career Document. It can also ingest existing resumes, LinkedIn profile exports, or any career materials you already have as a starting point.
+2. **Resume Writer**: takes your Master Career Document and a job description, then produces a tailored LaTeX resume optimized for Applicant Tracking Systems. You run this each time you apply somewhere.
 
 The typical flow:
 
@@ -38,13 +38,21 @@ Here's what the agent produces from the included example data:
 
 ### Claude Code
 
-Install [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (Anthropic's CLI tool):
+Install [Claude Code](https://code.claude.com/docs) (Anthropic's CLI tool). On macOS, Linux, or WSL:
 
 ```bash
-curl -fsSL https://install.anthropic.com | sh
+curl -fsSL https://claude.ai/install.sh | bash
 ```
 
-You need an Anthropic API key or a Claude Pro/Max subscription. See [Claude Code docs](https://docs.anthropic.com/en/docs/claude-code) for setup. Each resume generation typically uses the Sonnet model and takes 30-60 seconds. The career document builder interview takes longer depending on career complexity.
+On Windows PowerShell:
+
+```powershell
+irm https://claude.ai/install.ps1 | iex
+```
+
+Homebrew (`brew install --cask claude-code`) and WinGet (`winget install Anthropic.ClaudeCode`) also work. Run `claude --version` afterward to confirm the install. See the [setup guide](https://code.claude.com/docs/en/setup) for other options.
+
+You need a Claude Pro, Max, Team, or Enterprise plan, or an Anthropic Console (API) account. The free claude.ai plan does not include Claude Code. See [authentication](https://code.claude.com/docs/en/authentication) for details. Each resume generation typically uses the Sonnet model and takes 30-60 seconds. The career document builder interview takes longer depending on career complexity.
 
 ### LaTeX (for PDF compilation)
 
@@ -61,14 +69,14 @@ This installs all required LaTeX packages. No additional package installation sh
 ```bash
 brew install --cask mactex-no-gui
 ```
-The full `mactex-no-gui` (~4GB) includes all required packages. The smaller `basictex` (~100MB) may be missing fonts and packages -- if you use it, install missing packages with `tlmgr`:
+The full `mactex-no-gui` (~4GB) includes all required packages. The smaller `basictex` (~100MB) may be missing fonts and packages. If you use it, install missing packages with `tlmgr`:
 ```bash
 sudo tlmgr update --self
 sudo tlmgr install fontawesome5 fontawesome CormorantGaramond charter \
   ragged2e microtype lastpage bookmark tabularx enumitem titlesec fancyhdr
 ```
 
-**Important:** The resume template uses `fontawesome5` and the cover letter template uses `fontawesome`. These are separate packages -- both must be installed for full functionality.
+**Important:** The resume template uses `fontawesome5` and the cover letter template uses `fontawesome`. These are separate packages, and both must be installed for full functionality.
 
 <details>
 <summary>Troubleshooting LaTeX packages</summary>
@@ -102,13 +110,13 @@ If you don't have LaTeX installed and don't want to install it locally, you can 
 
 3. **Create your Master Career Document** (choose one):
 
-   **Option A -- Guided interview (recommended):**
+   **Option A: Guided interview (recommended):**
    ```
    Help me build my career document
    ```
    The `career-doc-builder` agent will walk you through an interactive interview to produce a comprehensive 18-section MCD. If you have existing resumes, LinkedIn exports, or other career materials, it can ingest those as a starting point.
 
-   **Option B -- Manual:**
+   **Option B: Manual:**
    ```bash
    cp examples/Master_Career_Document.md Master_Career_Document.md
    ```
@@ -121,7 +129,7 @@ If you don't have LaTeX installed and don't want to install it locally, you can 
    claude
    ```
 
-   The agent definition in `.claude/agents/ats-resume-writer.md` is preconfigured -- you don't need to read or modify it to generate resumes.
+   The agent definition in `.claude/agents/ats-resume-writer.md` is preconfigured, so you don't need to read or modify it to generate resumes.
 
 ## Usage
 
@@ -193,14 +201,14 @@ Update my MCD with my new role
 
 The agent runs a multi-phase interview that builds your career document section by section:
 
-1. **Intake** -- Feed it existing resumes, LinkedIn exports, or any career materials you have. It extracts roles, skills, metrics, and dates as a baseline. Starting from scratch is fine too.
-2. **Identity & Positioning** -- Establishes your target titles, value proposition, and writes 2-4 genuinely different professional summary angles.
-3. **Skills Inventory** -- Walks through skill categories relevant to your field, suggests gaps, and separates current skills from legacy ones.
-4. **Work Experience** -- The core of the interview. Goes role by role (most recent first), probing for metrics, suggesting common responsibilities you may have missed, and offering agent notes where context matters.
-5. **Supporting Sections** -- Education, certifications, publications, compliance expertise, volunteer work, and positioning guidance.
-6. **Synthesis** -- Revises your summaries with the full career context, curates a highlight reel of your strongest metrics, and delivers the final document.
+1. **Intake**: Feed it existing resumes, LinkedIn exports, or any career materials you have. It extracts roles, skills, metrics, and dates as a baseline. Starting from scratch is fine too.
+2. **Identity & Positioning**: Establishes your target titles, value proposition, and writes 2-4 genuinely different professional summary angles.
+3. **Skills Inventory**: Walks through skill categories relevant to your field, suggests gaps, and separates current skills from legacy ones.
+4. **Work Experience**: The core of the interview. Goes role by role (most recent first), probing for metrics, suggesting common responsibilities you may have missed, and offering agent notes where context matters.
+5. **Supporting Sections**: Education, certifications, publications, compliance expertise, volunteer work, and positioning guidance.
+6. **Synthesis**: Revises your summaries with the full career context, curates a highlight reel of your strongest metrics, and delivers the final document.
 
-The output is a single Markdown file with 18 structured sections. The interview typically takes 30-60 minutes depending on career complexity and how much existing material you provide. Once complete, you reuse this document every time you generate a resume -- no re-interviewing.
+The output is a single Markdown file with 18 structured sections. The interview typically takes 30-60 minutes depending on career complexity and how much existing material you provide. Once complete, you reuse this document every time you generate a resume, with no re-interviewing.
 
 ## Project Structure
 
@@ -230,7 +238,7 @@ ats-resume-agent/
 
 ## Master Career Document Format
 
-The `career-doc-builder` agent produces a comprehensive 18-section MCD. You can also create one manually -- the resume writer agent handles both formats. Key sections:
+The `career-doc-builder` agent produces a comprehensive 18-section MCD. You can also create one manually; the resume writer agent handles both formats. Key sections:
 
 | Section | Purpose |
 |---------|---------|
@@ -254,7 +262,7 @@ See `examples/Master_Career_Document.md` for the full 18-section structure with 
 You can embed instructions for the agent directly in your career document:
 
 ```markdown
-> **Agent Note:** This project was collaborative -- do not attribute sole ownership.
+> **Agent Note:** This project was collaborative; do not attribute sole ownership.
 ```
 
 The agent treats these as binding instructions and will respect them when generating content.
@@ -269,7 +277,7 @@ Any content under a "Legacy & Historical Platforms" heading is automatically exc
 
 **Keyword-first content selection:** The agent builds a keyword map from each job description and prioritizes matching content from your career document. Skills sections list job-description keywords first within each category.
 
-**One source of truth:** All content comes from the Master Career Document. The agent never asks you for information during generation -- it reads the files and produces output.
+**One source of truth:** All content comes from the Master Career Document. The agent never asks you for information during generation. It reads the files and produces output.
 
 ## Customization
 
@@ -289,7 +297,7 @@ The LaTeX templates in `templates/` control the visual design:
 
 ### Adjusting Content Strategy
 
-The agent's content selection strategy, quality standards, and action verb lists are all defined in `.claude/agents/ats-resume-writer.md`. You can modify these to match your preferences -- for example, changing the recency bias from 5-7 years to 10 years, or adjusting the page limit.
+The agent's content selection strategy, quality standards, and action verb lists are all defined in `.claude/agents/ats-resume-writer.md`. You can modify these to match your preferences. For example, changing the recency bias from 5-7 years to 10 years, or adjusting the page limit.
 
 ### Cover Letter Tone
 
@@ -299,9 +307,9 @@ Edit the cover letter standards section in the agent definition to adjust tone, 
 
 Both agents are configured to use the Sonnet model (`model: sonnet` in the agent frontmatter), which provides the best balance of speed, cost, and quality for this workflow. If you want to use a different model, edit the `model:` field in the agent definition files.
 
-For the resume writer, Sonnet is recommended -- it follows the template commands reliably and respects the hard constraints. For the career document builder, Sonnet also works well for the conversational interview format.
+For the resume writer, Sonnet is recommended because it follows the template commands reliably and respects the hard constraints. For the career document builder, Sonnet also works well for the conversational interview format.
 
-If you find the agents occasionally deviating from instructions (adding unsolicited content, ignoring agent notes), try running with a fresh session (`claude --resume no`) to avoid context pollution from previous conversations.
+If you find the agents occasionally deviating from instructions (adding unsolicited content, ignoring agent notes), start a fresh session to avoid context pollution from previous conversations. Running plain `claude` always starts a new session (only `--continue` or `--resume` pick up an old one), and `/clear` wipes the context inside a session that is already open.
 
 ## License
 
@@ -312,4 +320,4 @@ The LaTeX resume template (`templates/resume-template.tex`) is based on work by 
 ## Acknowledgments
 
 - Resume LaTeX template by [Michael Lustfield](https://github.com/mtecknology) (CC-BY-4.0)
-- Built for use with [Claude Code](https://docs.anthropic.com/en/docs/claude-code) by Anthropic
+- Built for use with [Claude Code](https://code.claude.com/docs) by Anthropic
