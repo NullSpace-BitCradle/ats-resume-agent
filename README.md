@@ -433,7 +433,7 @@ These work the same for a plugin install, whose agent files keep the `model: son
 
 On 2026-09-27, each model got the resume writer's instructions plus the example MCD and job description, with no sample output available to copy, and wrote the Example Corp resume. These runs skipped the agent's own validator step, so they measure what the model writes before any check; the validator scored each result afterward. Runs passing, across all batches:
 
-| Model | Original prompt (v1.1.0) | Rewritten prompt |
+| Model | Original prompt | Rewritten prompt |
 |-------|--------------------------|------------------|
 | Sonnet | 2 of 2 | 4 of 4 |
 | Opus | 2 of 2 | 2 of 2 |
@@ -441,7 +441,7 @@ On 2026-09-27, each model got the resume writer's instructions plus the example 
 
 With the original prompt, Haiku added Kafka, which appears only in the job description's tech stack, in 2 of 4 runs, and wrote `34%` instead of `34\%` (which silently cuts the rest of the line out of the PDF) in 2 of 4. The rewrite states that the job description never supplies content, puts a check on the skills table (where the padding happened), and requires escaping LaTeX special characters. Two further Haiku runs with the validator step turned on also passed, after fixing what it flagged.
 
-These are small samples, so treat them as a smoke test rather than a benchmark. Sonnet stays the default: Opus did no better on these checks and costs more. Either way, keep the validator step on.
+"Original prompt" is v1.1.0 plus this release's plugin paths and validator steps, which these runs skipped. "Rewritten prompt" covers the rewrite and one round of small review edits (summary length, tense, certification form). These are small samples, so treat them as a smoke test rather than a benchmark. Sonnet stays the default: Opus did no better on these checks and costs more. Either way, keep the validator step on.
 
 If you find the agents occasionally deviating from instructions (adding unsolicited content, ignoring agent notes), start a fresh session to avoid context pollution from previous conversations. Running plain `claude` always starts a new session (only `--continue` or `--resume` pick up an old one), and `/clear` wipes the context inside a session that is already open.
 

@@ -47,7 +47,7 @@ Standards:
 
 - Reverse chronological order, unless the MCD's "Notes for Resume Customization" recommends otherwise for this role type.
 - Every bullet starts with a strong action verb (never "Responsible for") and is achievement-focused. Use past tense for completed achievements, including ones in the current role, and present tense only for ongoing duties. No personal pronouns.
-- The summary is 3 to 4 sentences, built from the MCD's own summaries. Its claims (clearance, certifications, metrics) must be traceable to the MCD without paraphrase that inflates them. The validator checks values, not sentences, so this one is on you.
+- The summary is 3 to 4 sentences, built from the MCD's own summaries (combine sentences from them when the best-fitting version is shorter). Its claims (clearance, certifications, metrics) must be traceable to the MCD without paraphrase that inflates them. The validator checks values, not sentences, so this one is on you.
 - When the MCD says a course was completed but the certification was not earned ("exam not pursued"), write "coursework in" or "exam preparation for". Never list the certification name as if it were earned.
 - One page, or two only when 10+ years of experience make it unavoidable.
 - Standard section names (Summary, Skills, Experience, Education), and both an acronym and its spelled-out form where the MCD supports it.
