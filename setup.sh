@@ -97,10 +97,10 @@ for dep in "${missing[@]}"; do
                 read -rp "Install TeX Live via apt? [y/N] " yn
                 if [[ "$yn" =~ ^[Yy]$ ]]; then
                     sudo apt-get install -y texlive-latex-base texlive-fonts-recommended \
-                        texlive-fonts-extra texlive-latex-extra
+                        texlive-fonts-extra texlive-latex-extra cm-super
                     ok "TeX Live installed"
                 else
-                    warn "Skipped LaTeX (install later: sudo apt-get install texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra)"
+                    warn "Skipped LaTeX (install later: sudo apt-get install texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra cm-super)"
                 fi
             else
                 warn "Could not detect package manager. Install pdflatex manually. See README for instructions."
@@ -111,7 +111,7 @@ for dep in "${missing[@]}"; do
             if [[ "$yn" =~ ^[Yy]$ ]]; then
                 sudo tlmgr update --self
                 sudo tlmgr install fontawesome5 fontawesome CormorantGaramond charter \
-                    ragged2e microtype lastpage bookmark tabularx enumitem titlesec fancyhdr
+                    ragged2e microtype lastpage bookmark tabularx enumitem titlesec fancyhdr cm-super
                 ok "LaTeX packages installed"
             else
                 warn "Skipped LaTeX packages (install later with tlmgr)"

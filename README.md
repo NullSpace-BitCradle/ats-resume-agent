@@ -61,9 +61,9 @@ The agent outputs `.tex` files. To compile them to PDF, you need `pdflatex`.
 **Ubuntu/Debian/WSL:**
 ```bash
 sudo apt-get install texlive-latex-base texlive-fonts-recommended \
-  texlive-fonts-extra texlive-latex-extra
+  texlive-fonts-extra texlive-latex-extra cm-super
 ```
-This installs all required LaTeX packages. No additional package installation should be needed.
+This installs all required LaTeX packages. `cm-super` provides the scalable fonts the cover letter template needs; without it, `pdflatex` stops with `auto expansion is only possible with scalable fonts`.
 
 **macOS:**
 ```bash
@@ -73,7 +73,7 @@ The full `mactex-no-gui` (~4GB) includes all required packages. The smaller `bas
 ```bash
 sudo tlmgr update --self
 sudo tlmgr install fontawesome5 fontawesome CormorantGaramond charter \
-  ragged2e microtype lastpage bookmark tabularx enumitem titlesec fancyhdr
+  ragged2e microtype lastpage bookmark tabularx enumitem titlesec fancyhdr cm-super
 ```
 
 **Important:** The resume template uses `fontawesome5` and the cover letter template uses `fontawesome`. These are separate packages, and both must be installed for full functionality.

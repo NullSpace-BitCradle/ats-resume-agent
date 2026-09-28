@@ -29,7 +29,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             texlive-latex-base texlive-fonts-recommended \
-            texlive-fonts-extra texlive-latex-extra poppler-utils
+            texlive-fonts-extra texlive-latex-extra cm-super poppler-utils
       - name: Compile templates and examples
         run: |
           mkdir -p build
