@@ -510,7 +510,7 @@ describe("cover letters", () => {
 
   test("a cover letter's own date, in any common form, is not a claim", () => {
     for (const d of ["March 10, 2026", "09/27/2026", "27 September 2026", "September 27th, 2026", "2026-09-27", "Sunday, September 27, 2026", "Austin, TX \\hfill September 27, 2026"]) {
-      const dated = cover.replace("\\begin{letter}", `${d}\n\n    \\begin{letter}`);
+      const dated = cover.replace("\\begin{letter}", `\n\n${d}\n\n    \\begin{letter}`);
       expect(dated).toContain(d);
       expect(validate(dated, mcd, { extraSources: [jd] }).findings).toEqual([]);
     }
