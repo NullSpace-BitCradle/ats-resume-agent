@@ -80,6 +80,17 @@ export function exportText(tex: string): string {
       continue;
     }
 
+    // A letter's date is its own paragraph, as it renders; the salutation
+    // starts a new one after the recipient block.
+    const date = line.match(/^\\date\{(.*)\}\s*$/);
+    if (date) {
+      blank();
+      out.push(stripLatex(date[1]));
+      out.push("");
+      continue;
+    }
+    if (line.startsWith("\\opening")) blank();
+
     // Everything else (cover letter prose, letter blocks): drop environment and
     // rule markup, keep \begin{letter}{...} and \opening{...} text, split on \\.
     const cleaned = line

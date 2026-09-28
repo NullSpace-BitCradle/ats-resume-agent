@@ -55,6 +55,15 @@ describe("resume export", () => {
 });
 
 describe("cover letter export", () => {
+  test("the example cover letter exports with its date as a paragraph and still validates", () => {
+    const cover = readFileSync(join(root, "examples/sample-output/CoverLetter-Alex_Morgan-Example_Corp-Senior_Engineer.tex"), "utf8");
+    const jd = readFileSync(join(root, "examples/Job_Description-Example_Corp-Senior_Engineer.md"), "utf8");
+    const text = exportText(cover);
+    expect(text).toContain("\n\nMarch 10, 2026\n\n");
+    expect(text).toContain("\n\nDear Hiring Manager,");
+    expect(validate(text, mcd, { format: "text", extraSources: [jd] }).findings).toEqual([]);
+  });
+
   test("the cover letter template exports to clean paragraphs", () => {
     const text = exportText(coverTemplate);
     expect(text).not.toMatch(/[\\{}~]|\[t\]|0\.5|linewidth/);
