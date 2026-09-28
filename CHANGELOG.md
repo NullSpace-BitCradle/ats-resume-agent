@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.2.0: Checked zero fabrication, CI, and plugin install
+
+- New zero-fabrication validator (`tools/validate.ts`): checks every number, date, employer, title, degree, certification, and skill in a generated resume against the Master Career Document, and fails loudly on anything it can't back up or can't read. Cover letters can add the job description as a source
+- The validator flags unescaped `%` signs, which silently cut text out of the PDF
+- New plain-text export (`tools/export-text.ts`) for application forms and ATS portals that read text better than PDF
+- CI on every push: validator tests, a `pdflatex` build of every template and example, and a plugin install check
+- Installable as a Claude Code plugin: `/plugin marketplace add NullSpace-BitCradle/ats-resume-agent`
+- README: current Claude Code install commands and docs links, a real way to start a fresh session, model selection guidance, and a small model comparison
+- Added `cm-super` to the LaTeX install instructions; without it the cover letter template fails on Ubuntu and WSL
+- Sample resume regenerated from CI output. The previous image listed Kafka, which the example MCD never mentions
+- Example resume and cover letter `.tex` sources added under `examples/sample-output/`
+
+The original v1.1.0 is preserved as the `v1.1.0` release and the `v1` branch.
+
 ## v1.1.0 -- Career Document Builder & Agent Improvements
 
 - New `career-doc-builder` agent: interactive interview that produces comprehensive 18-section Master Career Documents
