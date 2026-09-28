@@ -402,7 +402,7 @@ Both agents default to Sonnet (`model: sonnet` in each agent file's frontmatter)
 - **Per agent:** change the `model:` line at the top of `.claude/agents/ats-resume-writer.md` or `.claude/agents/career-doc-builder.md`. It takes an alias (`sonnet`, `opus`, `haiku`), a full model ID, or `inherit` to use whatever model your main session runs.
 - **For every subagent:** set `CLAUDE_CODE_SUBAGENT_MODEL` (for example, to `opus`) in your environment or in the `env` block of your Claude Code settings. It applies to agents with no `model:` line. Adding `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` makes it win over everything: the `model:` lines are ignored, and a model named per request is too.
 
-These work the same for a plugin install, whose agent files keep the `model: sonnet` line. See [choosing a subagent's model](https://code.claude.com/docs/en/sub-agents).
+These work the same for a plugin install, whose agent files keep the `model: sonnet` line. With a plugin, though, the agent files live in Claude Code's plugin cache and are replaced on every update, so choose per request or with the environment variable rather than editing them. See [choosing a subagent's model](https://code.claude.com/docs/en/sub-agents).
 
 #### How models compare on this workflow
 
