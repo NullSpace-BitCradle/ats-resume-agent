@@ -50,12 +50,11 @@ export function stripLatex(text: string): string {
   return text
     .replace(/(?<!\\)%.*$/gm, "")
     .replace(/\\href\s*\{[^}]*\}/g, "")
-    .replace(/-?\d*\.?\d+\s*\\(?:textwidth|linewidth|textheight|columnwidth|height|width|baselineskip)\b/g, " ")
-    .replace(/-?\d*\.?\d+\s*(?:pt|mm|cm|em|ex|bp)\b/g, " ")
     .replace(/\\(?:addtolength|setlength|definecolor|rule)\s*\{[^}]*\}(?:\s*\{[^}]*\})+/g, " ")
     .replace(/\\(?:raisebox|vspace|hspace|color|pagestyle|thispagestyle)\*?\s*\{[^}]*\}/g, " ")
     .replace(/\\begin\{(?:tabularx|minipage)\}(?:\[[^\]]*\])?(?:\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\})*/g, " ")
     .replace(/\{,\}/g, ",")
+    .replace(/(\d)\\,(\d{3})(?!\d)/g, "$1,$2")
     .replace(/\\\\(?:\[[^\]]*\])?/g, " ")
     .replace(/\\([%$&#_])/g, "$1")
     .replace(/\\[,;: !]/g, " ")

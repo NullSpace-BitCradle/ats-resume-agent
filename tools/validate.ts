@@ -55,26 +55,41 @@ function containsTerm(corpus: string, term: string): boolean {
 
 // Fullwidth and spelled-out percent signs read the same as %.
 function normalizeSymbols(s: string): string {
-  return s.replace(/％/g, "%").replace(/(\d)\s*(?:percent|per cent)\b/gi, "$1%");
+  return s.replace(/％/g, "%").replace(/(\d)\s*(?:percent(?:age points?)?|per cent|pct)\b/gi, "$1%");
 }
 
 // ---------------------------------------------------------------- the source
 
+// "Legacy & Historical Platforms" as the career-doc-builder writes it, plus the
+// titles people use for the same idea. A project called "Legacy Platform
+// Migration" does not match: the title has to end on what is being retired.
+function isLegacyHeading(title: string): boolean {
+  const t = title.replace(/[*_`]/g, "").trim();
+  if (/^legacy$/i.test(t)) return true;
+  return /^(legacy|deprecated|outdated)\b/i.test(t) && /\b(historical|platforms?|skills?|technolog(?:y|ies)|tools?|stack)\s*$/i.test(t);
+}
+
 // The MCD minus what must never count as evidence: HTML comments, Agent Note
-// instructions (a note saying "never list CISSP" is not a CISSP), and any
-// Legacy & Historical Platforms section at any heading level. Ordered-list
-// markers go too: a table of contents numbered 1 to 18 would otherwise back
-// every small number in the resume, and in-page links (the table of
-// contents) are dropped, so section names never become acronym sources.
+// instructions (a note saying "never list CISSP" is not a CISSP), and the
+// Legacy section at any heading level. Ordered-list markers go too: a table of
+// contents numbered 1 to 18 would otherwise back every small number in the
+// resume, and in-page links (the table of contents) are dropped, so section
+// names never become acronym sources.
 function sourceText(mcd: string): string {
   const kept: string[] = [];
   let skipLevel = 0;
+  let inNote = false;
   for (const line of mcd.replace(/<!--[\s\S]*?-->/g, " ").split("\n")) {
-    const h = line.match(/^(#{1,6})\s/);
+    const h = line.match(/^(#{1,6})\s+(.*)$/);
     if (h && skipLevel && h[1].length <= skipLevel) skipLevel = 0;
-    if (h && /\blegacy\b/i.test(line) && /\b(historical|platforms?)\b/i.test(line)) skipLevel = h[1].length;
+    if (h && isLegacyHeading(h[2])) skipLevel = h[1].length;
     if (skipLevel) continue;
-    if (/^\s*>\s*\**\s*agent note\b/i.test(line)) continue;
+    if (/^\s*(?:>|[-*])\s*\**\s*(?:agent note|note for (?:the )?agent)\b/i.test(line)) {
+      inNote = /^\s*>/.test(line);
+      continue;
+    }
+    if (inNote && /^\s*>/.test(line)) continue;
+    inNote = false;
     kept.push(line);
   }
   return kept
@@ -118,19 +133,24 @@ function collectAcronyms(text: string): Set<string> {
 // A number not glued to a word (S3, EC2, and IDs are the skills check's job),
 // with an optional currency symbol, then a percent or a magnitude.
 const NUMBER =
-  /([$€£¥])?(?<![A-Za-z0-9.,])(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)(?:\s?(%)|(k|K|MM|M|mn|B|bn)(?![A-Za-z])|\s(thousand|million|billion)(?![A-Za-z]))?/g;
+  /([$€£¥])?(?<![A-Za-z0-9.,])(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)(?:\s?(%)|(k|mm|mn|m|bn|b)(?![A-Za-z])|\s(thousand|million|billion)(?![A-Za-z]))?/gi;
 
 const WORDS: Record<string, number> = {
   two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11,
   twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18,
   nineteen: 19, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80,
-  ninety: 90, dozen: 12,
+  ninety: 90, dozen: 12, one: 1, a: 1, "half a": 0.5,
 };
-// "one" is left out on purpose: "one of the first" is prose, not a metric.
-const WORD_NUMBER = new RegExp(`\\b(${Object.keys(WORDS).join("|")})(?:\\s(thousand|million|billion))?\\b`, "gi");
+// "one", "a", and "half a" only count before a magnitude ("one million"):
+// on their own they are prose ("one of the first"), not metrics.
+const PROSE_ONLY = new Set(["one", "a", "half a"]);
+const WORD_NUMBER = new RegExp(
+  `\\b(half a|${Object.keys(WORDS).filter((w) => w !== "half a").join("|")})(?:\\s(hundred|thousand|million|billion))?\\b`,
+  "gi",
+);
 
 const MULTIPLIER: Record<string, number> = {
-  k: 1e3, thousand: 1e3, m: 1e6, mm: 1e6, mn: 1e6, million: 1e6, b: 1e9, bn: 1e9, billion: 1e9,
+  hundred: 100, k: 1e3, thousand: 1e3, m: 1e6, mm: 1e6, mn: 1e6, million: 1e6, b: 1e9, bn: 1e9, billion: 1e9,
 };
 
 function valueKey(n: number): string {
@@ -144,11 +164,18 @@ interface Parsed {
   money?: string;
   percent: boolean;
   scaled: boolean;
+  // The first word after the number, which pins a job-description number to its context.
+  next: string;
+}
+
+function nextWord(text: string, from: number): string {
+  return text.slice(from).match(/^[^A-Za-z\n]{0,6}([A-Za-z]+)/)?.[1].toLowerCase() ?? "";
 }
 
 function parseNumbers(text: string): Parsed[] {
   const out: Parsed[] = [];
-  for (const m of normalizeSymbols(text).matchAll(NUMBER)) {
+  const norm = normalizeSymbols(text);
+  for (const m of norm.matchAll(NUMBER)) {
     const core = m[2].replace(/,/g, "");
     const mag = (m[4] ?? m[5])?.toLowerCase();
     const value = valueKey(Number(core) * (mag ? MULTIPLIER[mag] : 1));
@@ -160,11 +187,21 @@ function parseNumbers(text: string): Parsed[] {
       money: m[1],
       percent: Boolean(m[3]),
       scaled: Boolean(mag),
+      next: nextWord(norm, m.index + m[0].length),
     });
   }
   for (const m of text.matchAll(WORD_NUMBER)) {
-    const n = WORDS[m[1].toLowerCase()] * (m[2] ? MULTIPLIER[m[2].toLowerCase()] : 1);
-    out.push({ token: m[0], core: String(n), value: valueKey(n), percent: false, scaled: Boolean(m[2]) });
+    const word = m[1].toLowerCase();
+    if (PROSE_ONLY.has(word) && !m[2]) continue;
+    const n = WORDS[word] * (m[2] ? MULTIPLIER[m[2].toLowerCase()] : 1);
+    out.push({
+      token: m[0],
+      core: String(n),
+      value: valueKey(n),
+      percent: false,
+      scaled: Boolean(m[2]),
+      next: nextWord(text, m.index + m[0].length),
+    });
   }
   return out;
 }
@@ -174,15 +211,18 @@ interface NumberSet {
   values: Set<string>;
   percents: Set<string>;
   money: Set<string>;
+  next: Map<string, Set<string>>;
 }
 
 function collectNumbers(text: string): NumberSet {
-  const set: NumberSet = { cores: new Set(), values: new Set(), percents: new Set(), money: new Set() };
+  const set: NumberSet = { cores: new Set(), values: new Set(), percents: new Set(), money: new Set(), next: new Map() };
   for (const n of parseNumbers(text)) {
     set.cores.add(n.core);
     set.values.add(n.value);
     if (n.percent) set.percents.add(n.value);
     if (n.money) set.money.add(n.money + n.value);
+    if (!set.next.has(n.value)) set.next.set(n.value, new Set());
+    set.next.get(n.value)!.add(n.next);
   }
   return set;
 }
@@ -198,10 +238,17 @@ function numberBacked(n: Parsed, source: NumberSet): boolean {
 
 // ---------------------------------------------------------------- dates
 
-const MONTH = /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sept?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\.?(?![a-z])/g;
+const MONTH_NAME =
+  "(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sept?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)";
+const MONTH = new RegExp(`\\b${MONTH_NAME}\\.?(?![a-z])`, "g");
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 
-const DAY_DATE = new RegExp(`${MONTH.source}\\s+\\d{1,2},\\s+\\d{4}\\b`, "gi");
+// A line that is nothing but a full date ("March 10, 2026", "27 September 2026",
+// "09/27/2026") dates the letter itself. A date inside a sentence is a claim.
+const LETTER_DATE = new RegExp(
+  `^\\s*(?:${MONTH_NAME}\\.?\\s+\\d{1,2},?\\s+\\d{4}|\\d{1,2}\\s+${MONTH_NAME}\\.?\\s+\\d{4}|\\d{1,2}/\\d{1,2}/\\d{4})\\s*$`,
+  "i",
+);
 
 // "Mar 2022", "March 2022", and "03/2022" all compare equal; so do Present and Current.
 function canonDates(s: string): string {
@@ -266,14 +313,30 @@ function splitSkills(cell: string): string[] {
 
 // ---------------------------------------------------------------- validate
 
+const SKILLS_NAME = /skill|competenc|proficienc|technolog|tools|stack|expertise/i;
+const CERTS_NAME = /certif|licens|credential/i;
+
 export function validate(resume: string, mcd: string, options: Options = {}): Result {
   const format = options.format ?? "tex";
-  const cleaned = [sourceText(mcd), ...(options.extraSources ?? []).map(sourceText)].join("\n");
-  const sourceLines = cleaned.split("\n").map(normalize);
-  const corpus = normalize(`${cleaned}\n${expandParentheticals(cleaned)}`);
-  const dateCorpus = normalize(canonDates(cleaned));
+  const extra = options.extraSources ?? [];
+  if (extra.length && format === "tex" && /\\heading(?:Bf|It)?\s*\{|\\begin\{tabularx\}/.test(resume)) {
+    throw new Error(
+      "Extra sources are for cover letters. This file has resume structure (headings or a skills table), and everything on a resume must come from the Master Career Document alone.",
+    );
+  }
+
+  const cleaned = sourceText(mcd);
+  const extraCleaned = extra.map(sourceText).join("\n");
+  const all = `${cleaned}\n${extraCleaned}`;
+  const lines = all.split("\n");
+  // Three-line windows: a heading or certification's parts must appear together,
+  // allowing for an MCD that puts the institution, degree, and minor on separate lines.
+  const windows = lines.map((_, i) => normalize(lines.slice(i, i + 3).join(" ")));
+  const corpus = normalize(`${all}\n${expandParentheticals(all)}`);
+  const dateCorpus = normalize(canonDates(all));
   const numbers = collectNumbers(cleaned);
-  const acronyms = collectAcronyms(cleaned);
+  const extraNumbers = collectNumbers(extraCleaned);
+  const acronyms = collectAcronyms(all);
 
   const findings: Finding[] = [];
   const checked: Result["checked"] = { numbers: 0, dates: 0, headings: 0, certifications: 0, skills: 0 };
@@ -281,11 +344,15 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
   const flag = (kind: Kind, token: string, line: number) =>
     findings.push({ kind, token, line, context: (rawLines[line - 1] ?? "").trim() });
 
-  // A full day-level date ("March 10, 2026") dates the letter itself; it is not a career claim.
+  // A job-description number only backs a claim that keeps its context: the
+  // same next word. "5+ years" in a posting does not back "mentored 5".
   const checkNumbers = (text: string, line: number) => {
-    for (const n of parseNumbers(text.replace(DAY_DATE, " "))) {
+    if (LETTER_DATE.test(text)) return;
+    for (const n of parseNumbers(text)) {
       checked.numbers++;
-      if (!numberBacked(n, numbers)) flag("number", n.token, line);
+      if (numberBacked(n, numbers)) continue;
+      if (numberBacked(n, extraNumbers) && extraNumbers.next.get(n.value)?.has(n.next)) continue;
+      flag("number", n.token, line);
     }
   };
 
@@ -331,12 +398,24 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
     for (let i = from; i < to; i++) if (blanked[i] !== "\n") blanked[i] = " ";
   };
 
+  const inOneWindow = (parts: string[]) =>
+    windows.some((w) =>
+      parts.every((p) => {
+        if (containsTerm(w, p)) return true;
+        const degree = DEGREES.find(([re]) => re.test(p));
+        return Boolean(degree && containsTerm(w, degree[1]));
+      }),
+    );
+
   const checkHeading = (raw: string, line: number) => {
     const text = stripLatex(raw).replace(/\s+/g, " ");
-    if (!text || /^(certifications?|licenses?( & certifications)?)$/i.test(text)) return;
+    if (!text || /^(certifications?|licenses?( & certifications)?|credentials?)$/i.test(text)) return;
     checked.headings++;
     if (containsTerm(corpus, text)) return;
-    for (const part of headingParts(text)) if (!partBacked(corpus, part)) flag("heading", part, line);
+    const parts = headingParts(text);
+    const missing = parts.filter((p) => !partBacked(corpus, p));
+    if (missing.length) for (const part of missing) flag("heading", part, line);
+    else if (!inOneWindow(parts)) flag("heading", text, line);
   };
 
   const checkDate = (raw: string, line: number) => {
@@ -345,6 +424,23 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
       if (!containsTerm(dateCorpus, canonDates(part))) flag("date", part, line);
     }
   };
+
+  const checkCert = (cert: string, line: number) => {
+    checked.certifications++;
+    if (containsTerm(corpus, cert)) return;
+    if (!inOneWindow(headingParts(cert))) flag("certification", cert, line);
+  };
+
+  const checkSkills = (cell: string, line: number) => {
+    for (const skill of splitSkills(cell)) {
+      checked.skills++;
+      const ok = containsTerm(corpus, skill) || (/^[A-Z]{2,6}$/.test(skill) && acronyms.has(skill));
+      if (!ok) flag("skill", skill, line);
+    }
+  };
+
+  // The letter's own \date{} is not a claim.
+  for (const d of findCommands(body, "date", 1)) blank(d.at, d.end);
 
   // Employers, titles, degrees, and their dates, in any spacing or nesting.
   const headings = ["headingBf", "headingIt", "heading"].flatMap((c) => findCommands(body, c, 2));
@@ -359,7 +455,8 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
     blank(t.at, t.end);
   }
 
-  // Skills tables, with rows that may wrap across lines.
+  // Skills tables. Rows may wrap across lines, and a row with no & (a
+  // \multicolumn, or text broken onto its own row with \\) is checked too.
   for (const m of body.matchAll(/\\begin\{tabularx\}/g)) {
     const close = body.indexOf("\\end{tabularx}", m.index);
     const tableEnd = close < 0 ? body.length : close;
@@ -368,44 +465,44 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
     for (const row of body.slice(offset, tableEnd).split(/\\\\/)) {
       const cells = row.split(/(?<!\\)&/);
       const lead = row.length - row.trimStart().length;
-      if (cells.length > 1) {
-        for (const skill of splitSkills(stripLatex(cells.slice(1).join(" ")).replace(/\s+/g, " "))) {
-          checked.skills++;
-          const ok = containsTerm(corpus, skill) || (/^[A-Z]{2,6}$/.test(skill) && acronyms.has(skill));
-          if (!ok) flag("skill", skill, at(offset + lead));
-        }
-      }
+      const cell =
+        cells.length > 1
+          ? cells.slice(1).join(" ")
+          : row.replace(/\\multicolumn\s*\{[^}]*\}\s*\{[^}]*\}/g, "").replace(/^\s*\{?\s*[^,:{}]{1,40}:\s*/, "");
+      const text = stripLatex(cell).replace(/\s+/g, " ");
+      if (text) checkSkills(text, at(offset + lead));
       offset += row.length + 2;
     }
     blank(m.index, tableEnd);
   }
 
-  // Certifications: items under a Certifications heading or section, up to the
-  // next section or heading. The name and every other part (issuer, year) must
-  // appear together on one MCD line.
-  const certStarts = [
-    ...findCommands(body, "section", 1).filter((s) => /certif|licens/i.test(s.args[0])),
-    ...headings.filter((h) => /certif|licens/i.test(h.args[0])),
-  ];
-  const boundaries = [...findCommands(body, "section", 1), ...headings].map((x) => x.at);
+  // Certifications: every \item under a Certifications, Licenses, or Credentials
+  // heading or section, and any loose text in that block, up to the next
+  // section or heading. The name, issuer, and year must appear together in the MCD.
+  const sections = ["section", "subsection", "tinysection"].flatMap((c) => findCommands(body, c, 1));
+  const certStarts = [...sections, ...headings].filter((s) => CERTS_NAME.test(stripLatex(s.args[0])));
+  const boundaries = [...sections, ...headings].map((x) => x.at);
   for (const s of certStarts) {
     const next = Math.min(...boundaries.filter((x) => x > s.at), body.length);
     const block = body.slice(s.end, next);
-    for (const item of block.matchAll(/\\item(?![A-Za-z])\s*([\s\S]*?)(?=\\item(?![A-Za-z])|\\end\{|$)/g)) {
+    const items = [...block.matchAll(/\\item(?![A-Za-z])\s*([\s\S]*?)(?=\\item(?![A-Za-z])|\\end\{|$)/g)];
+    for (const item of items) {
       const cert = stripLatex(item[1]).replace(/\s+/g, " ");
-      if (!cert) continue;
-      checked.certifications++;
-      const line = at(s.end + item.index);
-      if (containsTerm(corpus, cert)) continue;
-      const parts = headingParts(cert);
-      const name = [...parts].sort((x, y) => y.length - x.length)[0];
-      const home = sourceLines.filter((l) => containsTerm(l, name));
-      if (!home.length || !parts.every((p) => home.some((l) => containsTerm(l, p)))) flag("certification", cert, line);
+      if (cert) checkCert(cert, at(s.end + item.index));
     }
+    let loose = block;
+    for (const item of items) loose = loose.replace(item[0], " ".repeat(item[0].length));
+    loose = loose.replace(/\\(?:begin|end)\{[^}]*\}/g, " ");
+    const looseText = stripLatex(loose).replace(/\s+/g, " ").replace(/^[^,:]{1,20}:\s*/, "");
+    if (looseText) {
+      const where = at(s.end + loose.search(/\S/));
+      for (const cert of splitSkills(looseText)) checkCert(cert, where);
+    }
+    blank(s.end, next);
   }
 
   // A section the validator could not read fails loudly instead of passing empty.
-  const skillsSection = findCommands(body, "section", 1).find((s) => /skill/i.test(s.args[0]));
+  const skillsSection = sections.find((s) => SKILLS_NAME.test(stripLatex(s.args[0])));
   if (skillsSection && checked.skills === 0) flag("coverage", "Skills section has no table the validator can read", at(skillsSection.at));
   if (certStarts.length && checked.certifications === 0)
     flag("coverage", "Certifications heading has no items the validator can read", at(certStarts[0].at));
@@ -437,7 +534,14 @@ if (import.meta.main) {
     process.exit(2);
   }
   const format = resumePath.endsWith(".tex") ? "tex" : "text";
-  const { findings, checked } = validate(resume, mcd, { format, extraSources });
+  let result: Result;
+  try {
+    result = validate(resume, mcd, { format, extraSources });
+  } catch (err) {
+    console.error((err as Error).message);
+    process.exit(2);
+  }
+  const { findings, checked } = result;
   const summary = Object.entries(checked)
     .map(([k, v]) => `${v} ${k}`)
     .join(", ");

@@ -185,15 +185,15 @@ The zero-fabrication promise is checked in code, not just in the prompt. The val
 
 - **Numbers:** every number, including spelled-out ones like "fifteen" or "12 million", must appear in the MCD. Percentages must match a percentage, money must match money in the same currency, and scaled values must match by value, so `2.3M`, `2.3 million`, and `2,300,000` are interchangeable, but a bare `3` does not back `3M`.
 - **Dates:** each start and end date on a heading line. `Mar 2022`, `March 2022`, and `03/2022` count as the same date, and so do Present and Current.
-- **Employers, titles, and degrees:** the text of every `\headingBf`, `\headingIt`, and `\heading` line, plus client names in `\itemTitle{Client: ...}`. Common degree abbreviations (`B.S.`, `MBA`, `Ph.D.`) match the spelled-out degree.
-- **Certifications:** each item under a Certifications heading or section. The name, issuer, and year must appear together on one line of the MCD, so a real certification with a shifted year still fails.
+- **Employers, titles, and degrees:** the text of every `\headingBf`, `\headingIt`, and `\heading` line, plus client names in `\itemTitle{Client: ...}`. When a heading has several parts (`Software Engineer, Staff`), they must appear together within a few lines of the MCD, not scattered across it. Common degree abbreviations (`B.S.`, `MBA`, `Ph.D.`) match the spelled-out degree.
+- **Certifications:** each item, and any loose text, under a Certifications, Licenses, or Credentials heading or section. The name, issuer, and year must appear together in the MCD, so a real certification with a shifted year still fails.
 - **Skills:** each item in the skills table, including rows that wrap across lines. An acronym passes when the MCD spells out the phrase it stands for (`TDD` for Test-Driven Development), and `AWS (EC2, Lambda)` in the MCD backs `AWS Lambda`.
 
-These never count as a source: anything under a "Legacy & Historical Platforms" section (at any heading level), `> **Agent Note:**` lines (a note saying "never list CISSP" is not evidence of CISSP), HTML comments, link targets, and the table of contents.
+These never count as a source: the "Legacy & Historical Platforms" section at any heading level (and titles like "Legacy Skills", "Deprecated Skills", or plain "Legacy"), Agent Notes, whether a quoted block or a bullet (a note saying "never list CISSP" is not evidence of CISSP), HTML comments, link targets, and the table of contents.
 
 It also flags an unescaped `%` after a number (`34%` instead of `34\%`). LaTeX treats that `%` as the start of a comment, so the rest of the line silently disappears from the PDF even though `pdflatex` reports success.
 
-If the resume has a Skills section or a Certifications heading the validator cannot read (for example, skills written as plain text instead of the template's table), it reports a `coverage` finding instead of passing. An unfamiliar layout fails loudly; it never passes silently.
+If the resume has a skills section (Skills, Core Competencies, Technical Proficiencies, and similar names) or a certifications heading the validator cannot read, for example skills written as plain text instead of the template's table, it reports a `coverage` finding instead of passing. An unfamiliar layout fails loudly; it never passes silently.
 
 The validator needs [Bun](https://bun.sh):
 
@@ -209,7 +209,9 @@ It prints `PASS` and exits 0, or lists each unsupported claim with its line numb
 bun tools/validate.ts output/CoverLetter-Your_Name-Company-Role.tex Master_Career_Document.md Job_Description-Company-Role.md
 ```
 
-Never pass the job description when checking a resume. Everything on a resume has to come from your own history, and a job posting's tech stack is exactly where padded skills come from.
+A number that only the job description backs has to keep its context: `50M+ monthly active users` passes, but `mentored 5 engineers` does not pass just because the posting asks for "5+ years". A line that is nothing but a date (the letter's own date) is skipped; a date inside a sentence is still checked.
+
+The validator refuses extra sources for a file with resume structure. Everything on a resume has to come from your own history, and a job posting's tech stack is exactly where padded skills come from.
 
 What it cannot prove:
 
