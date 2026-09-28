@@ -55,18 +55,25 @@ function containsTerm(corpus: string, term: string): boolean {
 
 // Fullwidth and spelled-out percent signs read the same as %.
 function normalizeSymbols(s: string): string {
-  return s.replace(/％/g, "%").replace(/(\d)\s*(?:percent(?:age points?)?|per cent|pct)\b/gi, "$1%");
+  return s
+    .replace(/\uFF05/g, "%")
+    .replace(/(\d)\u00A0(\d{3})(?!\d)/g, "$1,$2")
+    .replace(/(\d)[\s-]*(?:percent(?:age[\s-]points?)?|per cent|pct)\b/gi, "$1%");
 }
 
 // ---------------------------------------------------------------- the source
 
 // "Legacy & Historical Platforms" as the career-doc-builder writes it, plus the
-// titles people use for the same idea. A project called "Legacy Platform
-// Migration" does not match: the title has to end on what is being retired.
+// titles people use for the same idea, ignoring a trailing note like
+// "(do not use)" or a colon. A project called "Legacy Platform Migration" does
+// not match: the title has to end on what is being retired.
+const RETIRED = /^(legacy|deprecated|outdated|retired|historical)$/i;
 function isLegacyHeading(title: string): boolean {
-  const t = title.replace(/[*_`]/g, "").trim();
-  if (/^legacy$/i.test(t)) return true;
-  return /^(legacy|deprecated|outdated)\b/i.test(t) && /\b(historical|platforms?|skills?|technolog(?:y|ies)|tools?|stack)\s*$/i.test(t);
+  const t = title.replace(/[*_`]/g, "").replace(/\s*\([^)]*\)\s*$/, "").replace(/[:.\s]+$/, "").trim();
+  const words = t.split(/\s+/);
+  if (!RETIRED.test(words[0] ?? "")) return false;
+  if (words.every((w) => RETIRED.test(w) || /^(&|and|\/)$/i.test(w))) return true;
+  return /\b(historical|platforms?|skills?|tech|technolog(?:y|ies)|tools?|stack)$/i.test(t);
 }
 
 // The MCD minus what must never count as evidence: HTML comments, Agent Note
@@ -78,23 +85,26 @@ function isLegacyHeading(title: string): boolean {
 function sourceText(mcd: string): string {
   const kept: string[] = [];
   let skipLevel = 0;
-  let inNote = false;
+  let inNote: "" | "quote" | "bullet" = "";
   for (const line of mcd.replace(/<!--[\s\S]*?-->/g, " ").split("\n")) {
     const h = line.match(/^(#{1,6})\s+(.*)$/);
     if (h && skipLevel && h[1].length <= skipLevel) skipLevel = 0;
     if (h && isLegacyHeading(h[2])) skipLevel = h[1].length;
     if (skipLevel) continue;
-    if (/^\s*(?:>|[-*])\s*\**\s*(?:agent note|note for (?:the )?agent)\b/i.test(line)) {
-      inNote = /^\s*>/.test(line);
+    // A note is a quoted block or a bullet. A quoted note runs on through ">"
+    // lines; a bulleted one through its indented continuation lines.
+    if (/^\s*(?:>|[-*])\s*(?:[^\w\s*]+\s*)?\**\s*(?:\w+\s+)?(?:agent note|note for (?:the )?agent)\b/i.test(line)) {
+      inNote = /^\s*>/.test(line) ? "quote" : "bullet";
       continue;
     }
-    if (inNote && /^\s*>/.test(line)) continue;
-    inNote = false;
+    if (inNote === "quote" && /^\s*>/.test(line)) continue;
+    if (inNote === "bullet" && /^\s+\S/.test(line) && !/^\s*[-*]\s/.test(line)) continue;
+    inNote = "";
     kept.push(line);
   }
   return kept
     .join("\n")
-    .replace(/^\s*\d+\.\s+/gm, "")
+    .replace(/^(\s*)\d+\.\s+/gm, "$1- ")
     .replace(/\[[^\]]*\]\(#[^)]*\)/g, "")
     .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
     .replace(/[*`]/g, "");
@@ -164,12 +174,7 @@ interface Parsed {
   money?: string;
   percent: boolean;
   scaled: boolean;
-  // The first word after the number, which pins a job-description number to its context.
-  next: string;
-}
-
-function nextWord(text: string, from: number): string {
-  return text.slice(from).match(/^[^A-Za-z\n]{0,6}([A-Za-z]+)/)?.[1].toLowerCase() ?? "";
+  index: number;
 }
 
 function parseNumbers(text: string): Parsed[] {
@@ -187,7 +192,7 @@ function parseNumbers(text: string): Parsed[] {
       money: m[1],
       percent: Boolean(m[3]),
       scaled: Boolean(mag),
-      next: nextWord(norm, m.index + m[0].length),
+      index: m.index,
     });
   }
   for (const m of text.matchAll(WORD_NUMBER)) {
@@ -200,7 +205,7 @@ function parseNumbers(text: string): Parsed[] {
       value: valueKey(n),
       percent: false,
       scaled: Boolean(m[2]),
-      next: nextWord(text, m.index + m[0].length),
+      index: m.index,
     });
   }
   return out;
@@ -211,18 +216,15 @@ interface NumberSet {
   values: Set<string>;
   percents: Set<string>;
   money: Set<string>;
-  next: Map<string, Set<string>>;
 }
 
 function collectNumbers(text: string): NumberSet {
-  const set: NumberSet = { cores: new Set(), values: new Set(), percents: new Set(), money: new Set(), next: new Map() };
+  const set: NumberSet = { cores: new Set(), values: new Set(), percents: new Set(), money: new Set() };
   for (const n of parseNumbers(text)) {
     set.cores.add(n.core);
     set.values.add(n.value);
     if (n.percent) set.percents.add(n.value);
     if (n.money) set.money.add(n.money + n.value);
-    if (!set.next.has(n.value)) set.next.set(n.value, new Set());
-    set.next.get(n.value)!.add(n.next);
   }
   return set;
 }
@@ -243,12 +245,14 @@ const MONTH_NAME =
 const MONTH = new RegExp(`\\b${MONTH_NAME}\\.?(?![a-z])`, "g");
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 
-// A line that is nothing but a full date ("March 10, 2026", "27 September 2026",
-// "09/27/2026") dates the letter itself. A date inside a sentence is a claim.
-const LETTER_DATE = new RegExp(
-  `^\\s*(?:${MONTH_NAME}\\.?\\s+\\d{1,2},?\\s+\\d{4}|\\d{1,2}\\s+${MONTH_NAME}\\.?\\s+\\d{4}|\\d{1,2}/\\d{1,2}/\\d{4})\\s*$`,
-  "i",
-);
+// A full, day-level date in the forms letters use: "March 10, 2026",
+// "Sunday, September 27th, 2026", "27 September 2026", "09/27/2026", "2026-09-27".
+const DAY_DATE =
+  `(?:(?:mon|tues|wednes|thurs|fri|satur|sun)day,?\\s+)?(?:${MONTH_NAME}\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?,?\\s+\\d{4}` +
+  `|\\d{1,2}(?:st|nd|rd|th)?\\s+${MONTH_NAME}\\.?,?\\s+\\d{4}|\\d{1,2}/\\d{1,2}/\\d{4}|\\d{4}-\\d{2}-\\d{2})`;
+// The letter's own date: a line that is only a date, or a date after \hfill at
+// the end of a line ("Austin, TX \hfill September 27, 2026").
+const LETTER_DATE = new RegExp(`(^|\\\\hfill)\\s*${DAY_DATE}\\s*$`, "i");
 
 // "Mar 2022", "March 2022", and "03/2022" all compare equal; so do Present and Current.
 function canonDates(s: string): string {
@@ -311,6 +315,38 @@ function splitSkills(cell: string): string[] {
     .filter(Boolean);
 }
 
+// ---------------------------------------------------------------- context
+
+const STOPWORDS = new Set(
+  "with that from this have your they their them into over than were been will also more most such each what when where which while about across both only very every here there these those".split(" "),
+);
+
+// Words of four or more letters in the sentence around text[index].
+function sentenceWords(text: string, index: number): Set<string> {
+  const before = text.slice(0, index);
+  const startAt = Math.max(before.search(/[.!?;]\s+[^.!?;]*$/) + 1, 0);
+  const endRel = text.slice(index).search(/[.!?;](?:\s|$)/);
+  const sentence = text.slice(startAt, endRel < 0 ? text.length : index + endRel);
+  return new Set((sentence.toLowerCase().match(/[a-z]{4,}/g) ?? []).filter((w) => !STOPWORDS.has(w)));
+}
+
+// Split source text into scopes: markdown sections (heading to next heading),
+// and bullet entries (a top-level bullet through its indented and blank-line
+// continuations, up to the next top-level bullet or heading).
+function scopes(text: string): { sections: string[]; entries: string[] } {
+  const sections: string[][] = [[]];
+  const entries: string[][] = [[]];
+  for (const line of text.split("\n")) {
+    if (/^#{1,6}\s/.test(line)) {
+      sections.push([]);
+      entries.push([]);
+    } else if (/^[-*+]\s/.test(line)) entries.push([]);
+    sections[sections.length - 1].push(line);
+    entries[entries.length - 1].push(line);
+  }
+  return { sections: sections.map((l) => normalize(l.join(" "))), entries: entries.map((l) => normalize(l.join(" "))) };
+}
+
 // ---------------------------------------------------------------- validate
 
 const SKILLS_NAME = /skill|competenc|proficienc|technolog|tools|stack|expertise/i;
@@ -319,7 +355,8 @@ const CERTS_NAME = /certif|licens|credential/i;
 export function validate(resume: string, mcd: string, options: Options = {}): Result {
   const format = options.format ?? "tex";
   const extra = options.extraSources ?? [];
-  if (extra.length && format === "tex" && /\\heading(?:Bf|It)?\s*\{|\\begin\{tabularx\}/.test(resume)) {
+  const resumeShaped = format === "tex" && /\\heading(?:Bf|It)?\s*\{|\\begin\{tabularx\}/.test(resume);
+  if (extra.length && resumeShaped) {
     throw new Error(
       "Extra sources are for cover letters. This file has resume structure (headings or a skills table), and everything on a resume must come from the Master Career Document alone.",
     );
@@ -328,14 +365,16 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
   const cleaned = sourceText(mcd);
   const extraCleaned = extra.map(sourceText).join("\n");
   const all = `${cleaned}\n${extraCleaned}`;
-  const lines = all.split("\n");
-  // Three-line windows: a heading or certification's parts must appear together,
-  // allowing for an MCD that puts the institution, degree, and minor on separate lines.
-  const windows = lines.map((_, i) => normalize(lines.slice(i, i + 3).join(" ")));
+  // A heading's parts must come from one MCD section; a certification's name,
+  // issuer, and year from one bullet entry, so adjacent certs can't swap years.
+  const { sections: sourceSections, entries: sourceEntries } = scopes(all);
   const corpus = normalize(`${all}\n${expandParentheticals(all)}`);
   const dateCorpus = normalize(canonDates(all));
   const numbers = collectNumbers(cleaned);
-  const extraNumbers = collectNumbers(extraCleaned);
+  // Each job-description number with the words of its sentence.
+  const extraOccurrences = extraCleaned
+    .split("\n")
+    .flatMap((l) => parseNumbers(l).map((n) => ({ n, words: sentenceWords(normalizeSymbols(l), n.index) })));
   const acronyms = collectAcronyms(all);
 
   const findings: Finding[] = [];
@@ -344,20 +383,29 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
   const flag = (kind: Kind, token: string, line: number) =>
     findings.push({ kind, token, line, context: (rawLines[line - 1] ?? "").trim() });
 
-  // A job-description number only backs a claim that keeps its context: the
-  // same next word. "5+ years" in a posting does not back "mentored 5".
-  const checkNumbers = (text: string, line: number) => {
-    if (LETTER_DATE.test(text)) return;
+  // A job-description number only backs a claim made in a sentence that shares
+  // a word with the posting's sentence: "serving 50M+ users" matches "serving
+  // 50M+ monthly active users", but "mentored 5 junior engineers" does not
+  // match "5+ years of backend software engineering experience".
+  const sameNumber = (a: Parsed, b: Parsed) =>
+    a.money ? a.money === b.money && a.value === b.value
+    : a.percent ? b.percent && a.value === b.value
+    : a.scaled ? a.value === b.value
+    : a.core === b.core || a.value === b.value;
+  const checkNumbers = (text: string, lineAt: (index: number) => number) => {
     for (const n of parseNumbers(text)) {
       checked.numbers++;
       if (numberBacked(n, numbers)) continue;
-      if (numberBacked(n, extraNumbers) && extraNumbers.next.get(n.value)?.has(n.next)) continue;
-      flag("number", n.token, line);
+      const words = sentenceWords(normalizeSymbols(text), n.index);
+      if (extraOccurrences.some((o) => sameNumber(n, o.n) && [...o.words].some((w) => words.has(w)))) continue;
+      flag("number", n.token, lineAt(n.index));
     }
   };
 
   if (format === "text") {
-    rawLines.forEach((l, i) => checkNumbers(l, i + 1));
+    rawLines.forEach((l, i) => {
+      if (!new RegExp(`^\\s*${DAY_DATE}\\s*$`, "i").test(l)) checkNumbers(l, () => i + 1);
+    });
     return { findings, checked };
   }
 
@@ -365,8 +413,8 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
   // silently vanishes from the PDF while pdflatex still reports success.
   const docLine = rawLines.findIndex((l) => l.includes("\\begin{document}"));
   rawLines.forEach((l, i) => {
-    const m = l.match(/(?<!\\)(\d)%/);
-    if (m && i > docLine && !/^\s*%/.test(l)) flag("latex", `unescaped % after ${m[1]}`, i + 1);
+    const pct = l.search(/(?<!\\)%/);
+    if (i > docLine && pct > 0 && /\d/.test(l[pct - 1])) flag("latex", `unescaped % after ${l[pct - 1]}`, i + 1);
   });
 
   // Comments go first, so a commented-out \end{document} cannot end the window.
@@ -398,8 +446,8 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
     for (let i = from; i < to; i++) if (blanked[i] !== "\n") blanked[i] = " ";
   };
 
-  const inOneWindow = (parts: string[]) =>
-    windows.some((w) =>
+  const inOneScope = (parts: string[], scope: string[]) =>
+    scope.some((w) =>
       parts.every((p) => {
         if (containsTerm(w, p)) return true;
         const degree = DEGREES.find(([re]) => re.test(p));
@@ -415,7 +463,7 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
     const parts = headingParts(text);
     const missing = parts.filter((p) => !partBacked(corpus, p));
     if (missing.length) for (const part of missing) flag("heading", part, line);
-    else if (!inOneWindow(parts)) flag("heading", text, line);
+    else if (!inOneScope(parts, sourceSections)) flag("heading", text, line);
   };
 
   const checkDate = (raw: string, line: number) => {
@@ -428,7 +476,7 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
   const checkCert = (cert: string, line: number) => {
     checked.certifications++;
     if (containsTerm(corpus, cert)) return;
-    if (!inOneWindow(headingParts(cert))) flag("certification", cert, line);
+    if (!inOneScope(headingParts(cert), sourceEntries)) flag("certification", cert, line);
   };
 
   const checkSkills = (cell: string, line: number) => {
@@ -439,8 +487,18 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
     }
   };
 
-  // The letter's own \date{} is not a claim.
+  // The letter's own date is not a claim: \date{}, or in a file without resume
+  // structure, a line that ends in a full date. A resume never skips dates, so a
+  // date wrapped onto its own line inside a bullet is still checked.
   for (const d of findCommands(body, "date", 1)) blank(d.at, d.end);
+  if (!resumeShaped) {
+    let offset = 0;
+    for (const line of body.split("\n")) {
+      const m = stripComments(line).match(LETTER_DATE);
+      if (m) blank(offset + m.index! + m[1].length, offset + line.length);
+      offset += line.length + 1;
+    }
+  }
 
   // Employers, titles, degrees, and their dates, in any spacing or nesting.
   const headings = ["headingBf", "headingIt", "heading"].flatMap((c) => findCommands(body, c, 2));
@@ -462,16 +520,22 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
     const tableEnd = close < 0 ? body.length : close;
     const spec = findCommands(body.slice(m.index, tableEnd), "begin", 3)[0];
     let offset = m.index + (spec ? spec.end : "\\begin{tabularx}".length);
-    for (const row of body.slice(offset, tableEnd).split(/\\\\/)) {
-      const cells = row.split(/(?<!\\)&/);
-      const lead = row.length - row.trimStart().length;
+    // Rows end at \\ or \\[2pt]. A row with no & and no comma is a header or a
+    // rule line, not a list of skills.
+    for (const part of body.slice(offset, tableEnd).split(/(\\\\(?:\[[^\]]*\])?)/)) {
+      if (/^\\\\/.test(part)) {
+        offset += part.length;
+        continue;
+      }
+      const cells = part.split(/(?<!\\)&/);
+      const lead = part.length - part.trimStart().length;
       const cell =
         cells.length > 1
           ? cells.slice(1).join(" ")
-          : row.replace(/\\multicolumn\s*\{[^}]*\}\s*\{[^}]*\}/g, "").replace(/^\s*\{?\s*[^,:{}]{1,40}:\s*/, "");
+          : part.replace(/\\multicolumn\s*\{[^}]*\}\s*\{[^}]*\}/g, "").replace(/^\s*\{?\s*[^,:{}]{1,40}:\s*/, "");
       const text = stripLatex(cell).replace(/\s+/g, " ");
-      if (text) checkSkills(text, at(offset + lead));
-      offset += row.length + 2;
+      if (text && (cells.length > 1 || text.includes(","))) checkSkills(text, at(offset + lead));
+      offset += part.length;
     }
     blank(m.index, tableEnd);
   }
@@ -507,10 +571,20 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
   if (certStarts.length && checked.certifications === 0)
     flag("coverage", "Certifications heading has no items the validator can read", at(certStarts[0].at));
 
-  blanked
-    .join("")
-    .split("\n")
-    .forEach((l, i) => checkNumbers(stripLatex(l), at(0) + i));
+  // Numbers, a paragraph at a time, so a sentence wrapped across source lines
+  // keeps its context for the job-description rule.
+  const bodyLines = blanked.join("").split("\n");
+  const first = at(0);
+  for (let i = 0; i < bodyLines.length; ) {
+    const para: { text: string; line: number; from: number }[] = [];
+    let joined = "";
+    for (; i < bodyLines.length && stripLatex(bodyLines[i]); i++) {
+      para.push({ text: stripLatex(bodyLines[i]), line: first + i, from: joined.length });
+      joined += `${stripLatex(bodyLines[i])} `;
+    }
+    if (para.length) checkNumbers(joined, (index) => [...para].reverse().find((p) => p.from <= index)!.line);
+    else i++;
+  }
 
   findings.sort((x, y) => x.line - y.line);
   return { findings, checked };

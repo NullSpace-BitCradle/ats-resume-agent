@@ -246,8 +246,55 @@ describe("bypasses from the PR #2 review now fail", () => {
     expect(tokens(broken, "skill")).toEqual(["Kafka"]);
   });
 
-  test("heading parts must appear together in the MCD, not anywhere", () => {
-    expect(tokens(plant("\\headingIt{Software Engineer}{}", "\\headingIt{Software Engineer, Staff}{}"), "heading")).toEqual(["Software Engineer, Staff"]);
+  test("heading parts must come from one MCD section, not from anywhere", () => {
+    expect(tokens(plant("\\headingIt{Software Engineer}{}", "\\headingIt{Software Engineer, Mathematics}{}"), "heading")).toEqual([
+      "Software Engineer, Mathematics",
+    ]);
+  });
+
+  test("adjacent certifications do not lend each other their years", () => {
+    expect(tokens(plant("Associate (2023)", "Associate (2022)"), "certification")).toEqual(["AWS Solutions Architect - Associate (2022)"]);
+    expect(tokens(plant("(CKA) (2022)", "(CKA) (2023)"), "certification")).toEqual(["Certified Kubernetes Administrator (CKA) (2023)"]);
+  });
+
+  test("a day date wrapped onto its own line in a resume is still checked", () => {
+    expect(tokens(plant("\\item Mentored 4 junior", "\\item Promoted to team lead on\n    June 1, 2015\n    \\item Mentored 4 junior"), "number")).toEqual(["2015"]);
+  });
+
+  test("a bulleted Agent Note with a wrapped continuation line", () => {
+    const note = mcd.replace("## Work Experience", "- **Agent Note:** CISSP coursework only, exam not pursued;\n  never list CISSP as earned, and never mention Kafka.\n\n## Work Experience");
+    expect(tokens(plant("MongoDB, Datadog", "MongoDB, Kafka, Datadog"), "skill", note)).toEqual(["Kafka"]);
+  });
+
+  test("Agent Notes with an emoji, an adjective, or the note-for-agent wording", () => {
+    const tex = plant("MongoDB, Datadog", "MongoDB, Kafka, Datadog");
+    for (const n of ["> \u26A0\uFE0F **Agent Note:** never mention Kafka", "> **Important agent note:** never mention Kafka", "> **Note for agent:** never mention Kafka"]) {
+      expect(tokens(tex, "skill", mcd.replace("## Work Experience", `${n}\n\n## Work Experience`))).toEqual(["Kafka"]);
+    }
+  });
+
+  test("legacy titles with a trailing note or other common wording", () => {
+    const tex = plant("React, Next.js \\\\", "React, Next.js, jQuery \\\\");
+    const titles = [
+      "Legacy Skills (do not use)",
+      "Legacy & Historical Platforms (Excluded)",
+      "Legacy and Historical Platforms:",
+      "Legacy Tech",
+      "Historical Platforms",
+      "Retired Skills",
+      "Legacy / Deprecated",
+    ];
+    for (const title of titles) {
+      expect(tokens(tex, "skill", mcd.replace("## Legacy & Historical Platforms", `## ${title}`))).toEqual(["jQuery"]);
+    }
+  });
+
+  test("other thousands separators and percent spellings", () => {
+    for (const sep of ["~", "\\ ", "\\thinspace ", "\u00A0"]) {
+      expect(tokens(plant("850 enterprise", `4${sep}500 enterprise`), "number")).toEqual(["4,500"]);
+    }
+    expect(tokens(plant("850 enterprise", "a 45-percent share of enterprise"), "number")).toEqual(["45%"]);
+    expect(tokens(plant("850 enterprise", "a 45 percentage-point share of enterprise"), "number")).toEqual(["45%"]);
   });
 
   test("skills or certifications the validator cannot read fail as coverage, never a silent PASS", () => {
@@ -316,15 +363,36 @@ describe("honest output passes", () => {
     expect(validate(resume, moved).findings).toEqual([]);
   });
 
-  test("standalone letter dates in any common form", () => {
-    for (const d of ["March 10, 2026", "09/27/2026", "27 September 2026"]) {
-      expect(validate(plant("\\tinysection{Summary}", `${d}\n  \\tinysection{Summary}`), mcd).findings).toEqual([]);
-    }
+  test("the MCD's own blank-line and multi-line layouts still back honest output", () => {
+    const spread = mcd.replace(
+      "- **University of Texas at Austin**\n  Bachelor of Science in Computer Science | Graduated May 2017\n  - Minor: Mathematics",
+      "- **University of Texas at Austin**\n\n  Bachelor of Science in Computer Science\n\n  Graduated May 2017\n\n  - Minor: Mathematics",
+    );
+    expect(spread).not.toBe(mcd);
+    expect(validate(resume, spread).findings).toEqual([]);
+    const fourLine = mcd.replace(
+      "- AWS Solutions Architect -- Associate (2023)",
+      "- **AWS Solutions Architect -- Associate**\n  - Issuer: Amazon Web Services\n  - Credential ID: ABC-123\n  - Issued: 2023",
+    );
+    expect(validate(plant("AWS Solutions Architect -- Associate (2023)", "AWS Solutions Architect -- Associate -- Amazon Web Services (2023)"), fourLine).findings).toEqual([]);
   });
 
-  test("a letter's own date is not a career claim", () => {
-    expect(validate(plant("\\tinysection{Summary}", "March 10, 2026\n  \\tinysection{Summary}"), mcd).findings).toEqual([]);
+  test("honest tabularx spacing and header rows", () => {
+    const spaced = plant("Incident Response \\\\", "Incident Response \\\\[2pt]");
+    expect(validate(spaced, mcd).findings).toEqual([]);
+    const header = plant("\\begin{tabularx}{\\textwidth}{>{\\bfseries}l@{\\hspace{12pt}} X}\n", "\\begin{tabularx}{\\textwidth}{>{\\bfseries}l@{\\hspace{12pt}} X}\n\\multicolumn{2}{l}{\\textbf{Core Skills}} \\\\\n");
+    expect(validate(header, mcd).findings).toEqual([]);
   });
+
+  test("a percent sign inside a trailing comment is not a LaTeX error", () => {
+    expect(validate(plant("\\item Mentored 4 junior", "\\item Mentored 4 junior % TODO confirm 50% figure\n    "), mcd).findings).toEqual([]);
+  });
+
+  test("bare one and a are prose, even when the MCD has no 1", () => {
+    const noOne = mcd.replaceAll("Version 1", "Version A");
+    expect(validate(plant("\\tinysection{Summary}", "\\tinysection{Summary}\n  One of a kind, a builder."), noOne).findings).toEqual([]);
+  });
+
 });
 
 describe("cover letters", () => {
@@ -348,6 +416,34 @@ describe("cover letters", () => {
 
   test("extra sources are refused for a resume", () => {
     expect(() => validate(resume, mcd, { extraSources: [jd] })).toThrow(/cover letters/);
+  });
+
+  test("extra sources are refused for a file with only a skills table", () => {
+    const table = resume.slice(resume.indexOf("\\begin{tabularx}"), resume.indexOf("\\end{tabularx}") + "\\end{tabularx}".length);
+    expect(() => validate(`\\begin{document}\n${table}\n\\end{document}\n`, mcd, { extraSources: [jd] })).toThrow(/cover letters/);
+  });
+
+  test("a job description number used in a paraphrase of the posting passes", () => {
+    for (const [from, to] of [
+      ["serving 50M+ monthly active users", "serving 50M+ users"],
+      ["serving 50M+ monthly active users", "serving 50M+\n    monthly active users"],
+      ["I would welcome", "The \\$3,000 learning budget stood out. I would welcome"],
+    ]) {
+      expect(validate(cover.replace(from, to), mcd, { extraSources: [jd] }).findings).toEqual([]);
+    }
+  });
+
+  test("a cover letter's own date, in any common form, is not a claim", () => {
+    for (const d of ["March 10, 2026", "09/27/2026", "27 September 2026", "September 27th, 2026", "2026-09-27", "Sunday, September 27, 2026", "Austin, TX \\hfill September 27, 2026"]) {
+      const dated = cover.replace("\\begin{letter}", `${d}\n\n    \\begin{letter}`);
+      expect(dated).toContain(d);
+      expect(validate(dated, mcd, { extraSources: [jd] }).findings).toEqual([]);
+    }
+  });
+
+  test("a full date inside a letter sentence is still checked", () => {
+    const tex = cover.replace("I would welcome", "On June 1, 2015 I was promoted. I would welcome");
+    expect(validate(tex, mcd, { extraSources: [jd] }).findings.map((f) => f.token)).toEqual(["2015"]);
   });
 
   test("layout values in the cover letter template are not claims", () => {

@@ -54,7 +54,7 @@ export function stripLatex(text: string): string {
     .replace(/\\(?:raisebox|vspace|hspace|color|pagestyle|thispagestyle)\*?\s*\{[^}]*\}/g, " ")
     .replace(/\\begin\{(?:tabularx|minipage)\}(?:\[[^\]]*\])?(?:\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\})*/g, " ")
     .replace(/\{,\}/g, ",")
-    .replace(/(\d)\\,(\d{3})(?!\d)/g, "$1,$2")
+    .replace(/(\d)(?:\\,|~|\\ |\\thinspace\s*|\u00A0)(\d{3})(?!\d)/g, "$1,$2")
     .replace(/\\\\(?:\[[^\]]*\])?/g, " ")
     .replace(/\\([%$&#_])/g, "$1")
     .replace(/\\[,;: !]/g, " ")
