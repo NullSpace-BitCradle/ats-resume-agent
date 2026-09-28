@@ -447,9 +447,9 @@ If you find the agents occasionally deviating from instructions (adding unsolici
 
 This project is licensed under the [MIT License](LICENSE).
 
-The LaTeX resume template (`templates/resume-template.tex`) is based on work by [Michael Lustfield](https://github.com/mtecknology) and is licensed under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/legalcode.txt). See [templates/LICENSE-CC-BY-4.0.md](templates/LICENSE-CC-BY-4.0.md).
+The LaTeX resume template (`templates/resume-template.tex`) is adapted from [MTecknology/latex-resume](https://github.com/MTecknology/latex-resume) by [Michael Lustfield](https://github.com/mtecknology), modified for this project, and licensed under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/legalcode.txt). See [templates/LICENSE-CC-BY-4.0.md](templates/LICENSE-CC-BY-4.0.md).
 
 ## Acknowledgments
 
-- Resume LaTeX template by [Michael Lustfield](https://github.com/mtecknology) (CC-BY-4.0)
+- Resume LaTeX template adapted from [MTecknology/latex-resume](https://github.com/MTecknology/latex-resume) by [Michael Lustfield](https://github.com/mtecknology) (CC-BY-4.0)
 - Built for use with [Claude Code](https://code.claude.com/docs) by Anthropic
