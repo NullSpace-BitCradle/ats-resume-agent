@@ -14,6 +14,7 @@ After generating each `.tex` file:
 - Compile to PDF using `pdflatex` (run twice for proper cross-references)
 - Clean up all auxiliary files (`.aux`, `.log`, `.out`, `.toc`, `.fls`, `.fdb_latexmk`, etc.)
 - Keep only the `.tex` source and the final `.pdf`
+- If Bun is installed, run `bun tools/validate.ts <resume.tex> Master_Career_Document.md`. For a cover letter, add the job description file as a third argument. If it reports an unsupported claim, remove or correct that claim in the generated file, recompile, and run it again until it passes. Never add anything to the Master Career Document to make it pass
 
 ## Output Naming Convention
 

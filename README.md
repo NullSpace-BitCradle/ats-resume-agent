@@ -179,6 +179,53 @@ Add the CloudBridge SSO migration project to the experience section
 Can you review this resume? I'm not getting callbacks
 ```
 
+### Verify Zero Fabrication
+
+The zero-fabrication promise is checked in code, not just in the prompt. The validator reads a generated resume and your Master Career Document and fails if the resume contains anything the MCD does not back up:
+
+- **Numbers:** every number, including spelled-out ones like "fifteen" or "12 million", must appear in the MCD. Percentages must match a percentage, money must match money in the same currency, and scaled values must match by value, so `2.3M`, `2.3 million`, and `2,300,000` are interchangeable, but a bare `3` does not back `3M`.
+- **Dates:** each start and end date on a heading line. `Mar 2022`, `March 2022`, and `03/2022` count as the same date, and so do Present and Current.
+- **Employers, titles, and degrees:** the text of every `\headingBf`, `\headingIt`, and `\heading` line, plus client names in `\itemTitle{Client: ...}`. When a heading has several parts (`Software Engineer, Mathematics`), they must all come from one section of the MCD, not from anywhere in it. Common degree abbreviations (`B.S.`, `MBA`, `Ph.D.`) match the spelled-out degree.
+- **Certifications:** each item, and any loose text, under a Certifications, Licenses, or Credentials heading or section. The name, issuer, and year must appear together in one MCD bullet, so when each certification is its own bullet, a real certification with a shifted year still fails. An entry can run across several lines.
+- **Skills:** each item in the skills table, including rows that wrap across lines. An acronym passes when the MCD spells out the phrase it stands for (`TDD` for Test-Driven Development), and `AWS (EC2, Lambda)` in the MCD backs `AWS Lambda`.
+
+These never count as a source: the "Legacy & Historical Platforms" section at any heading level (and titles like "Legacy Skills", "Deprecated Skills", or plain "Legacy"), Agent Notes, whether a quoted block or a bullet (a note saying "never list CISSP" is not evidence of CISSP), HTML comments, link targets, and the table of contents.
+
+It also flags an unescaped `%` after a number (`34%` instead of `34\%`). LaTeX treats that `%` as the start of a comment, so the rest of the line silently disappears from the PDF even though `pdflatex` reports success.
+
+If the resume has a skills section (Skills, Core Competencies, Technical Proficiencies, and similar names) or a certifications heading the validator cannot read, for example skills written as plain text instead of the template's table, it reports a `coverage` finding instead of passing. An unfamiliar layout fails loudly; it never passes silently.
+
+The validator needs [Bun](https://bun.sh):
+
+```bash
+bun tools/validate.ts output/Resume-Your_Name-Company-Role.tex Master_Career_Document.md
+```
+
+It prints `PASS` and exits 0, or lists each unsupported claim with its line number and exits 1. Files that don't end in `.tex` are read as plain text, and only their numbers are checked.
+
+**Cover letters** can name the company, the role, and facts from the job posting, so pass the job description as an extra source:
+
+```bash
+bun tools/validate.ts output/CoverLetter-Your_Name-Company-Role.tex Master_Career_Document.md Job_Description-Company-Role.md
+```
+
+A number that only the job description backs has to keep its context: the letter's sentence must share a word with the posting's sentence. `serving 50M+ users` passes against "serving 50M+ monthly active users", but `mentored 5 junior engineers` does not pass just because the posting asks for "5+ years". Close paraphrases can still fail (`the 5-year requirement` shares no word with `5+ years`); reword or leave the number out.
+
+The letter's own date is skipped when it sits on a line of its own that starts a paragraph (after a blank line, and followed by a blank line, a `\\` break, or the salutation), or after `\hfill` at the end of a line. A date inside a sentence is still checked, and resumes never skip dates.
+
+The validator refuses extra sources for a file with resume structure. Everything on a resume has to come from your own history, and a job posting's tech stack is exactly where padded skills come from.
+
+What it cannot prove:
+
+- **It matches values, not sentences.** If a real number, title, or date shows up attached to the wrong role, the validator will not notice.
+- **Parts of a heading can be combined within one MCD section.** Any parts found in the same section pass together, so a target title and a held title, or a title and a word from that role's bullets, can be joined into one heading.
+- **A posting's metric can be claimed as your own** if the sentence shares words with the posting's sentence.
+- **Shorthand like `45m` reads as 45 million.** Write out minutes.
+- **Synonyms fail.** If the MCD says PostgreSQL and the resume says Postgres, it fails. The fix is to add the term to your MCD if it's true.
+- **Prose isn't parsed for names.** An employer mentioned only in the summary paragraph isn't checked.
+
+Treat a PASS as "nothing was invented," not "every sentence is accurate," and still read the output.
+
 ### Build or Update Your Career Document
 
 The `career-doc-builder` agent guides you through creating a comprehensive Master Career Document via interactive interview:
@@ -218,12 +265,17 @@ ats-resume-agent/
 |-- LICENSE                   # MIT (project) + CC-BY-4 (LaTeX template)
 |-- CLAUDE.md                 # Instructions for Claude Code (you don't need to edit this)
 |-- setup.sh                  # Dependency checker and installer
+|-- package.json              # Bun scripts: validate, test
 |-- .gitignore                # Excludes output files and personal documents
 |-- .claude/
 |   `-- agents/
 |       |-- ats-resume-writer.md   # Resume/cover letter generation agent
 |       `-- career-doc-builder.md  # Interactive career document builder agent
 |-- images/                        # Screenshots for README
+|-- tools/
+|   |-- validate.ts                # Zero-fabrication validator
+|   |-- latex.ts                   # Shared LaTeX parsing helpers
+|   `-- validate.test.ts           # Validator tests (bun test)
 |-- templates/
 |   |-- resume-template.tex        # LaTeX resume template (CC-BY-4)
 |   `-- cover-letter-template.tex  # LaTeX cover letter template
@@ -231,6 +283,8 @@ ats-resume-agent/
 |   |-- Master_Career_Document.md  # Example career doc with fake data
 |   |-- Job_Description-Example_Corp-Senior_Engineer.md  # Example JD
 |   `-- sample-output/
+|       |-- Resume-Alex_Morgan-Example_Corp-Senior_Engineer.tex  # Example generated resume
+|       |-- CoverLetter-Alex_Morgan-Example_Corp-Senior_Engineer.tex  # Example cover letter
 |       |-- resume-preview.pdf     # Sample resume PDF
 |       `-- cover-letter-preview.pdf  # Sample cover letter PDF
 `-- output/                        # Generated resumes go here (gitignored)

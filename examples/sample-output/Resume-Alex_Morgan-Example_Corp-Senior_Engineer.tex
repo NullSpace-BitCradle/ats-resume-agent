@@ -1,0 +1,243 @@
+%%%%
+% Resume Template
+%%%%
+% Original Author: Michael Lustfield
+% License: CC-BY-4
+% - https://creativecommons.org/licenses/by/4.0/legalcode.txt
+%
+% Modified for use with the ATS Resume Writer agent.
+% This template is ATS-compatible via Unicode glyph mapping.
+%%%%
+
+\documentclass[letterpaper,10pt]{article}
+%%%%%%%%%%%%%%%%%%%%%%%
+%% BEGIN_FILE: mteck.sty
+%% NOTE: Everything between here and END_FILE can
+%% be relocated to "mteck.sty" and then included with:
+%\usepackage{mteck}
+
+% Dependencies
+% NOTE: Some packages (lastpage, hyperref) require second build!
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage{fontawesome5}
+\usepackage{multicol}
+\usepackage{bookmark}
+\usepackage{lastpage}
+\usepackage{tabularx}
+
+
+% Sans-Serif
+%\usepackage[sfdefault]{FiraSans}
+%\usepackage[sfdefault]{roboto}
+%\usepackage[sfdefault]{noto-sans}
+%\usepackage[default]{sourcesanspro}
+
+% Serif
+\usepackage{CormorantGaramond}
+\usepackage{charter}
+
+% Colors
+% Use with \color{Name}
+% Can wrap entire heading with {\color{accent} [...] }
+\usepackage{xcolor}
+\definecolor{accentTitle}{HTML}{0e6e55}
+\definecolor{accentText}{HTML}{0e6e55}
+\definecolor{accentLine}{HTML}{a16f0b}
+
+% Misc. Options
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\urlstyle{same}
+
+% Adjust Margins
+\addtolength{\oddsidemargin}{-0.7in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1.19in}
+\addtolength{\topmargin}{-0.7in}
+\addtolength{\textheight}{1.4in}
+
+\setlength{\multicolsep}{-3.0pt}
+\setlength{\columnsep}{-1pt}
+\setlength{\tabcolsep}{0pt}
+\setlength{\footskip}{3.7pt}
+\raggedbottom
+\raggedright
+
+% ATS Readability
+\input{glyphtounicode}
+\pdfgentounicode=1
+
+%-----------------%
+% Custom Commands %
+%-----------------%
+
+% Centered title along with subtitle between HR
+% Usage: \documentTitle{Name}{Details}
+\newcommand{\documentTitle}[2]{
+  \begin{center}
+    {\Huge\color{accentTitle} #1}
+    \vspace{10pt}
+    {\color{accentLine} \hrule}
+    \vspace{2pt}
+    %{\footnotesize\color{accentTitle} #2}
+    \footnotesize{#2}
+    \vspace{2pt}
+    {\color{accentLine} \hrule}
+  \end{center}
+}
+
+% Create a footer with correct padding
+% Usage: \documentFooter{\thepage of X}
+\newcommand{\documentFooter}[1]{
+  \setlength{\footskip}{10.25pt}
+  \fancyfoot[C]{\footnotesize #1}
+}
+
+% Simple wrapper to set up page numbering
+% Usage: \numberedPages
+% WARNING: Must run pdflatex twice!
+\newcommand{\numberedPages}{
+  \documentFooter{\thepage/\pageref{LastPage}}
+}
+
+% Section heading with horizontal rule
+% Usage: \section{Title}
+\titleformat{\section}{
+  \vspace{-5pt}
+  \color{accentText}
+  \raggedright\large\bfseries
+}{}{0em}{}[\color{accentLine}\titlerule]
+
+% Section heading with separator and content on same line
+% Usage: \tinysection{Title}
+\newcommand{\tinysection}[1]{
+  \phantomsection
+  \addcontentsline{toc}{section}{#1}
+  {\large{\bfseries\color{accentText}#1} {\color{accentLine} |}}
+}
+
+% Indented line with arguments left/right aligned in document
+% Usage: \heading{Left}{Right}
+\newcommand{\heading}[2]{
+  \hspace{10pt}#1\hfill#2\\
+}
+
+% Adds \textbf to \heading
+\newcommand{\headingBf}[2]{
+  \heading{\textbf{#1}}{\textbf{#2}}
+}
+
+% Adds \textit to \heading
+\newcommand{\headingIt}[2]{
+  \heading{\textit{#1}}{\textit{#2}}
+}
+
+% Template for itemized lists
+% Usage: \begin{resume_list} [items] \end{resume_list}
+\newenvironment{resume_list}{
+  \vspace{-7pt}
+  \begin{itemize}[itemsep=-2px, parsep=1pt, leftmargin=30pt]
+}{
+  \end{itemize}
+  %\vspace{-2pt}
+}
+
+% Formats an item to use as an itemized title
+% Usage: \itemTitle{Title}
+\newcommand{\itemTitle}[1]{
+  \item[] \underline{#1}\vspace{4pt}
+}
+
+% Bullets used in itemized lists
+\renewcommand\labelitemi{--}
+
+%% END_FILE: mteck.sty
+%%%%%%%%%%%%%%%%%%%%%%
+
+
+%===================%
+%   Your Resume     %
+%===================%
+
+%\numberedPages % NOTE: lastpage requires a second build
+%\documentFooter{\thepage of 2} % Does similar without using lastpage
+\begin{document}
+
+  \documentTitle{Alex Morgan}{
+    \href{tel:5558675309}{
+      \raisebox{-0.05\height} \faPhone\ (555) 867-5309} ~ | ~
+    \href{mailto:alex.morgan@example.com}{
+      \raisebox{-0.15\height} \faEnvelope\ alex.morgan@example.com} ~ | ~
+    \href{https://www.linkedin.com/in/alex-morgan-example/}{
+      \raisebox{-0.15\height} \faLinkedin\ linkedin.com/in/alex-morgan-example} ~ | ~
+    \href{https://github.com/alexmorgan-example}{
+      \raisebox{-0.15\height} \faGithub\ github.com/alexmorgan-example}
+  }
+
+  \tinysection{Summary}
+  Senior Software Engineer with 8 years of experience designing and scaling distributed systems and microservices in Go and Python on AWS. Proven record of leading architectural migrations, driving platform reliability, and mentoring engineering teams. Experienced delivering high-throughput backend services and event-driven pipelines serving millions of daily transactions.
+
+\section{Skills}
+\begin{tabularx}{\textwidth}{>{\bfseries}l@{\hspace{12pt}} X}
+Languages \& Frameworks & Go, Python, TypeScript, JavaScript, FastAPI, Django, Node.js, GraphQL, REST APIs, React, Next.js \\
+Cloud \& Infrastructure & AWS (ECS, Lambda, DynamoDB, S3, CloudFormation, EC2, RDS, EKS, CloudWatch, IAM), Kubernetes, Docker, Terraform, GitHub Actions, Jenkins, CircleCI, Nginx \\
+Data \& Observability & PostgreSQL, Redis, MongoDB, Datadog, Grafana, Prometheus \\
+Architecture \& Practices & Microservices, Event-Driven Design, Domain-Driven Design, TDD, System Design, CI/CD, Agile/Scrum, Incident Response \\
+\end{tabularx}
+
+  \section{Experience}
+
+  \headingBf{Stellar Technologies}{March 2022 -- Present}
+  \headingIt{Senior Software Engineer}{}
+  \begin{resume_list}
+    \item Led migration of monolithic Python application to 12 Go microservices, reducing average API latency from 340ms to 45ms
+    \item Architected event-driven order processing pipeline handling 2.3 million transactions per day with 99.97\% uptime
+    \item Designed and implemented real-time inventory sync system across 3 warehouse integrations, eliminating \$1.2M in annual oversell losses
+    \item Reduced AWS infrastructure costs by 34\% (\$180K annually) through right-sizing EC2 instances and migrating batch workloads to Lambda
+    \item Established observability standards using Datadog, creating 15 service dashboards and reducing mean-time-to-detection from 23 minutes to 4 minutes
+    \item Mentored 4 junior engineers through structured code review program, with 2 earning promotions within 18 months
+  \end{resume_list}
+
+  \headingBf{CloudBridge Solutions}{June 2019 -- February 2022}
+  \headingIt{Software Engineer}{}
+  \begin{resume_list}
+    \item Implemented automated CI/CD pipeline with GitHub Actions, reducing deployment time from 45 minutes to 8 minutes
+    \item Developed rate-limiting middleware handling 10,000 requests per second with sub-millisecond overhead
+    \item Migrated legacy authentication system to OAuth 2.0 + OIDC, supporting SSO for 12 enterprise customers
+    \item Contributed to open-source internal API gateway library adopted by 3 engineering teams (40+ developers)
+    \item Built customer-facing analytics dashboard serving 850 enterprise clients using React, GraphQL, and PostgreSQL
+  \end{resume_list}
+
+  \headingBf{DataFlow Inc.}{August 2017 -- May 2019}
+  \headingIt{Junior Software Engineer}{}
+  \begin{resume_list}
+    \item Developed Python ETL pipelines processing 500GB of daily data from 8 source systems
+    \item Participated in on-call rotation, resolving 40+ production incidents with average resolution time of 35 minutes
+  \end{resume_list}
+
+  \section{Projects}
+
+  \headingBf{open-queue (Open Source)}{2023 -- Present}
+  \begin{resume_list}
+    \item Lightweight job queue library for Go with Redis backend; 1,200+ GitHub stars, 45 contributors, used in production by 3 companies
+  \end{resume_list}
+
+  \section{Education}
+
+  \headingBf{University of Texas at Austin}{}
+  \headingIt{Bachelor of Science, Computer Science --- Minor: Mathematics}{Graduated May 2017}
+  \vspace{5pt}
+  \headingBf{Certifications}{}
+  \begin{resume_list}
+    \item AWS Solutions Architect -- Associate (2023)
+    \item Certified Kubernetes Administrator (CKA) (2022)
+  \end{resume_list}
+
+\end{document}
