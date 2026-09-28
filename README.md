@@ -248,6 +248,16 @@ What it cannot prove:
 
 Treat a PASS as "nothing was invented," not "every sentence is accurate," and still read the output.
 
+### Plain-Text Export
+
+Some applicant tracking systems read plain text more reliably than a PDF, and many application forms want resume text pasted into a box. The export turns a generated `.tex` into clean text with standard section headings, one line per role, and dash bullets:
+
+```bash
+bun tools/export-text.ts output/Resume-Your_Name-Company-Role.tex
+```
+
+It writes `output/Resume-Your_Name-Company-Role.txt` (pass a second argument to choose the path). It also handles cover letters. The `.tex` stays the source of truth. The export is derived from it, so run the validator on the `.txt` too if you edit it by hand.
+
 ### Build or Update Your Career Document
 
 The `career-doc-builder` agent guides you through creating a comprehensive Master Career Document via interactive interview:
@@ -301,7 +311,8 @@ ats-resume-agent/
 |-- tools/
 |   |-- validate.ts                # Zero-fabrication validator
 |   |-- latex.ts                   # Shared LaTeX parsing helpers
-|   `-- validate.test.ts           # Validator tests (bun test)
+|   |-- export-text.ts             # Plain-text export for ATS portals
+|   `-- *.test.ts                  # Tests (bun test)
 |-- templates/
 |   |-- resume-template.tex        # LaTeX resume template (CC-BY-4)
 |   `-- cover-letter-template.tex  # LaTeX cover letter template

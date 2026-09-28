@@ -27,5 +27,5 @@ The agent files exist twice: `.claude/agents/` is what Claude Code loads when yo
 
 ## What's Out of Scope
 
-- Adding non-LaTeX output formats (Word, plain text) -- this is a LaTeX-first project by design
-- Removing the zero-fabrication constraint -- this is a core design principle
+- Replacing LaTeX as the source format. This is a LaTeX-first project by design; other formats, like the plain-text export, are derived from the `.tex`
+- Removing the zero-fabrication constraint. This is a core design principle
