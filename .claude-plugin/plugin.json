@@ -1,0 +1,19 @@
+{
+  "name": "ats-resume-agent",
+  "version": "1.2.0",
+  "description": "ATS-optimized LaTeX resumes and cover letters tailored to a job description, generated only from your Master Career Document, plus a guided interview that builds that document.",
+  "author": {
+    "name": "NullSpace-BitCradle",
+    "url": "https://github.com/NullSpace-BitCradle"
+  },
+  "homepage": "https://github.com/NullSpace-BitCradle/ats-resume-agent",
+  "repository": "https://github.com/NullSpace-BitCradle/ats-resume-agent",
+  "license": "MIT",
+  "keywords": [
+    "resume",
+    "cover-letter",
+    "ats",
+    "latex",
+    "job-search"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "nullspace-bitcradle",
+  "description": "Claude Code plugins by NullSpace-BitCradle",
+  "owner": {
+    "name": "NullSpace-BitCradle",
+    "url": "https://github.com/NullSpace-BitCradle"
+  },
+  "plugins": [
+    {
+      "name": "ats-resume-agent",
+      "source": "./",
+      "description": "ATS-optimized LaTeX resumes and cover letters generated only from your Master Career Document."
+    }
+  ]
+}
