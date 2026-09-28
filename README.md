@@ -61,9 +61,9 @@ The agent outputs `.tex` files. To compile them to PDF, you need `pdflatex`.
 **Ubuntu/Debian/WSL:**
 ```bash
 sudo apt-get install texlive-latex-base texlive-fonts-recommended \
-  texlive-fonts-extra texlive-latex-extra
+  texlive-fonts-extra texlive-latex-extra cm-super
 ```
-This installs all required LaTeX packages. No additional package installation should be needed.
+This installs all required LaTeX packages. `cm-super` provides the scalable fonts the cover letter template needs; without it, `pdflatex` stops with `auto expansion is only possible with scalable fonts`.
 
 **macOS:**
 ```bash
@@ -73,7 +73,7 @@ The full `mactex-no-gui` (~4GB) includes all required packages. The smaller `bas
 ```bash
 sudo tlmgr update --self
 sudo tlmgr install fontawesome5 fontawesome CormorantGaramond charter \
-  ragged2e microtype lastpage bookmark tabularx enumitem titlesec fancyhdr
+  ragged2e microtype lastpage bookmark tabularx enumitem titlesec fancyhdr cm-super
 ```
 
 **Important:** The resume template uses `fontawesome5` and the cover letter template uses `fontawesome`. These are separate packages, and both must be installed for full functionality.
@@ -95,6 +95,8 @@ If you don't have LaTeX installed and don't want to install it locally, you can 
 </details>
 
 ## Setup
+
+There are two ways to use this project. Clone it (steps below) if you want to edit the templates or agents. Or install it as a Claude Code plugin and use it from any folder without cloning (see [Install as a plugin](#install-as-a-plugin)).
 
 1. **Clone this repository:**
    ```bash
@@ -130,6 +132,26 @@ If you don't have LaTeX installed and don't want to install it locally, you can 
    ```
 
    The agent definition in `.claude/agents/ats-resume-writer.md` is preconfigured, so you don't need to read or modify it to generate resumes.
+
+### Install as a plugin
+
+This repository is also a Claude Code plugin marketplace. Inside any Claude Code session, run these, then confirm the install in the `/plugin` panel that the second command opens:
+
+```
+/plugin marketplace add NullSpace-BitCradle/ats-resume-agent
+/plugin install ats-resume-agent@nullspace-bitcradle
+```
+
+Or from your shell, where the install finishes directly:
+
+```bash
+claude plugin marketplace add NullSpace-BitCradle/ats-resume-agent
+claude plugin install ats-resume-agent@nullspace-bitcradle
+```
+
+That installs both agents (`ats-resume-writer` and `career-doc-builder`) along with the LaTeX templates and the validator. Then work from any folder that holds your `Master_Career_Document.md` and a `Job_Description-*.md` file. Generated files go to `output/` in that folder. You still need `pdflatex` for PDFs (see [Prerequisites](#latex-for-pdf-compilation)), and Bun if you want the validator.
+
+To update later, run `/plugin marketplace update nullspace-bitcradle`.
 
 ## Usage
 
@@ -266,6 +288,10 @@ ats-resume-agent/
 |-- CLAUDE.md                 # Instructions for Claude Code (you don't need to edit this)
 |-- setup.sh                  # Dependency checker and installer
 |-- package.json              # Bun scripts: validate, test
+|-- agents/                   # Same agents, in the plugin layout (kept identical by CI)
+|-- .claude-plugin/
+|   |-- plugin.json           # Plugin manifest (agents, metadata)
+|   `-- marketplace.json      # Lets /plugin marketplace add install from this repo
 |-- .gitignore                # Excludes output files and personal documents
 |-- .claude/
 |   `-- agents/

@@ -21,6 +21,10 @@ Thanks for your interest in contributing to ats-resume-agent.
 - New LaTeX template variants
 - Agent definition improvements
 
+## Editing the Agents
+
+The agent files exist twice: `.claude/agents/` is what Claude Code loads when you clone the repo, and `agents/` is what the plugin install loads. Keep them identical. CI fails if they differ.
+
 ## What's Out of Scope
 
 - Adding non-LaTeX output formats (Word, plain text) -- this is a LaTeX-first project by design
