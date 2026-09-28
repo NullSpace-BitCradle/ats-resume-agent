@@ -248,6 +248,16 @@ What it cannot prove:
 
 Treat a PASS as "nothing was invented," not "every sentence is accurate," and still read the output.
 
+### Plain-Text Export
+
+Some applicant tracking systems read plain text more reliably than a PDF, and many application forms want resume text pasted into a box. The export turns a generated `.tex` into clean text with standard section headings, one line per role, and dash bullets:
+
+```bash
+bun tools/export-text.ts output/Resume-Your_Name-Company-Role.tex
+```
+
+It writes `output/Resume-Your_Name-Company-Role.txt` (pass a second argument to choose the path). It also handles cover letters. The `.tex` stays the source of truth. The export is derived from it, so run the validator on the `.txt` too if you edit it by hand.
+
 ### Build or Update Your Career Document
 
 The `career-doc-builder` agent guides you through creating a comprehensive Master Career Document via interactive interview:
@@ -301,7 +311,8 @@ ats-resume-agent/
 |-- tools/
 |   |-- validate.ts                # Zero-fabrication validator
 |   |-- latex.ts                   # Shared LaTeX parsing helpers
-|   `-- validate.test.ts           # Validator tests (bun test)
+|   |-- export-text.ts             # Plain-text export for ATS portals
+|   `-- *.test.ts                  # Tests (bun test)
 |-- templates/
 |   |-- resume-template.tex        # LaTeX resume template (CC-BY-4)
 |   `-- cover-letter-template.tex  # LaTeX cover letter template
@@ -385,9 +396,25 @@ Edit the cover letter standards section in the agent definition to adjust tone, 
 
 ### Model Settings
 
-Both agents are configured to use the Sonnet model (`model: sonnet` in the agent frontmatter), which provides the best balance of speed, cost, and quality for this workflow. If you want to use a different model, edit the `model:` field in the agent definition files.
+Both agents default to Sonnet (`model: sonnet` in each agent file's frontmatter). You can pick a different model in any of these ways, from most specific to least:
 
-For the resume writer, Sonnet is recommended because it follows the template commands reliably and respects the hard constraints. For the career document builder, Sonnet also works well for the conversational interview format.
+- **Per request:** name the model when you ask, such as "use the ats-resume-writer agent on Opus for the Example Corp file." A model named in the request wins over the other two settings below.
+- **Per agent:** change the `model:` line at the top of `.claude/agents/ats-resume-writer.md` or `.claude/agents/career-doc-builder.md`. It takes an alias (`sonnet`, `opus`, `haiku`), a full model ID, or `inherit` to use whatever model your main session runs.
+- **For every subagent:** set `CLAUDE_CODE_SUBAGENT_MODEL` (for example, to `opus`) in your environment or in the `env` block of your Claude Code settings. It applies to agents with no `model:` line. Adding `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` makes it win over everything: the `model:` lines are ignored, and a model named per request is too.
+
+These work the same for a plugin install, whose agent files keep the `model: sonnet` line. With a plugin, though, the agent files live in Claude Code's plugin cache and are replaced on every update, so choose per request or with the environment variable rather than editing them. See [choosing a subagent's model](https://code.claude.com/docs/en/sub-agents).
+
+#### How models compare on this workflow
+
+On 2026-09-27, each model got the resume writer's instructions plus the example MCD and job description, with no sample output available to copy, and wrote the Example Corp resume twice. The validator scored each run:
+
+| Model | Runs passing | What failed |
+|-------|--------------|-------------|
+| Sonnet | 2 of 2 | nothing |
+| Opus | 2 of 2 | nothing |
+| Haiku | 0 of 2 | Kafka and "Event-Driven Architecture" added from the job description (1 run); unescaped `%` signs (both runs) |
+
+The failures are the ones the validator exists to catch. One Haiku run added Kafka, which appears only in the job description's tech stack. Both Haiku runs wrote `34%` instead of `34\%`, which silently cuts the rest of the line out of the PDF. Two runs per model is a small sample, so treat this as a smoke test rather than a benchmark. It is still enough to keep Haiku off the resume writer. Opus did no better than Sonnet on these checks and costs more, so Sonnet stays the default. Either way, always run the validator.
 
 If you find the agents occasionally deviating from instructions (adding unsolicited content, ignoring agent notes), start a fresh session to avoid context pollution from previous conversations. Running plain `claude` always starts a new session (only `--continue` or `--resume` pick up an old one), and `/clear` wipes the context inside a session that is already open.
 

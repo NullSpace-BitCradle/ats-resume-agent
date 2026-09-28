@@ -259,7 +259,8 @@ Use the actual filename from the output naming convention in Step 4 or Step 5 --
    ```bash
    rm -f output/*.aux output/*.log output/*.out output/*.toc output/*.fls output/*.fdb_latexmk
    ```
-4. **Verify final state:** Run `ls output/` and confirm only `.tex` and `.pdf` files remain.
+4. **Plain-text export (if `bun` is available):** Run `bun tools/export-text.ts output/<file>.tex` for each `.tex` file. It writes a matching `.txt` for ATS portals that parse text better than PDF.
+5. **Verify final state:** Run `ls output/` and confirm only `.tex`, `.pdf`, and `.txt` files remain.
 
 **If compilation fails:** Check the `.log` file for the actual error. Common issues:
 - Missing package: install with `tlmgr install <package>` or `sudo apt-get install texlive-<collection>`

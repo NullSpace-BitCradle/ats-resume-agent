@@ -18,6 +18,17 @@ jobs:
         run: bun test tools/
       - name: Example resume traces to the example MCD
         run: bun tools/validate.ts examples/sample-output/Resume-Alex_Morgan-Example_Corp-Senior_Engineer.tex examples/Master_Career_Document.md
+      - name: Plain-text export of the example also traces to the MCD
+        run: |
+          bun tools/export-text.ts examples/sample-output/Resume-Alex_Morgan-Example_Corp-Senior_Engineer.tex example-resume.txt
+          if grep -n '[\\{}~]' example-resume.txt; then echo 'LaTeX left in the export'; exit 1; fi
+          bun tools/validate.ts example-resume.txt examples/Master_Career_Document.md
+      - name: Example cover letter traces to the MCD plus the job description
+        run: |
+          bun tools/validate.ts examples/sample-output/CoverLetter-Alex_Morgan-Example_Corp-Senior_Engineer.tex examples/Master_Career_Document.md examples/Job_Description-Example_Corp-Senior_Engineer.md
+          bun tools/export-text.ts examples/sample-output/CoverLetter-Alex_Morgan-Example_Corp-Senior_Engineer.tex example-cover.txt
+          if grep -n '[\\{}~]' example-cover.txt; then echo 'LaTeX left in the export'; exit 1; fi
+          bun tools/validate.ts example-cover.txt examples/Master_Career_Document.md examples/Job_Description-Example_Corp-Senior_Engineer.md
 
   latex:
     name: Compile LaTeX

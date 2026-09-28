@@ -1,6 +1,7 @@
 # Output files
 output/*.pdf
 output/*.tex
+output/*.txt
 output/*.aux
 output/*.log
 output/*.out

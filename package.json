@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "validate": "bun tools/validate.ts",
+    "export": "bun tools/export-text.ts",
     "test": "bun test tools/"
   }
 }
