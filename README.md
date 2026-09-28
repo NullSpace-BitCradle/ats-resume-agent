@@ -201,7 +201,7 @@ The validator needs [Bun](https://bun.sh):
 bun tools/validate.ts output/Resume-Your_Name-Company-Role.tex Master_Career_Document.md
 ```
 
-It prints `PASS` and exits 0, or lists each unsupported claim with its line number and exits 1. Files that don't end in `.tex` are read as plain text (like the [plain-text export](#plain-text-export)), and only their numbers are checked.
+It prints `PASS` and exits 0, or lists each unsupported claim with its line number and exits 1. Files that don't end in `.tex` are read as plain text, and only their numbers are checked.
 
 **Cover letters** can name the company, the role, and facts from the job posting, so pass the job description as an extra source:
 
@@ -218,7 +218,7 @@ The validator refuses extra sources for a file with resume structure. Everything
 What it cannot prove:
 
 - **It matches values, not sentences.** If a real number, title, or date shows up attached to the wrong role, the validator will not notice.
-- **Parts of a heading can be combined within one MCD section.** Two real titles from the same section (for example a target title and a held title) can be joined into one heading.
+- **Parts of a heading can be combined within one MCD section.** Any parts found in the same section pass together, so a target title and a held title, or a title and a word from that role's bullets, can be joined into one heading.
 - **A posting's metric can be claimed as your own** if the sentence shares words with the posting's sentence.
 - **Shorthand like `45m` reads as 45 million.** Write out minutes.
 - **Synonyms fail.** If the MCD says PostgreSQL and the resume says Postgres, it fails. The fix is to add the term to your MCD if it's true.

@@ -58,22 +58,25 @@ function normalizeSymbols(s: string): string {
   return s
     .replace(/\uFF05/g, "%")
     .replace(/(\d)\u00A0(\d{3})(?!\d)/g, "$1,$2")
-    .replace(/(\d)[\s-]*(?:percent(?:age[\s-]points?)?|per cent|pct)\b/gi, "$1%");
+    .replace(/(\d)[\s-]*(?:percent(?:age[\s-]points?)?|per[\s-]cent|pct)\b/gi, "$1%");
 }
 
 // ---------------------------------------------------------------- the source
 
 // "Legacy & Historical Platforms" as the career-doc-builder writes it, plus the
 // titles people use for the same idea, ignoring a trailing note like
-// "(do not use)" or a colon. A project called "Legacy Platform Migration" does
-// not match: the title has to end on what is being retired.
-const RETIRED = /^(legacy|deprecated|outdated|retired|historical)$/i;
+// "(do not use)", " - do not use", or a colon, and a leading emoji. "Skills
+// (Legacy)" counts too. A project called "Legacy Platform Migration" does not
+// match: the title has to end on what is being retired.
+const RETIRED = /^(legacy|deprecated|outdated|retired|historical|old)$/i;
 function isLegacyHeading(title: string): boolean {
-  const t = title.replace(/[*_`]/g, "").replace(/\s*\([^)]*\)\s*$/, "").replace(/[:.\s]+$/, "").trim();
+  const raw = title.replace(/[*_`]/g, "").replace(/^[^A-Za-z]+/, "").trim();
+  if (/\((legacy|deprecated|outdated|retired|historical)\)\s*:?\s*$/i.test(raw)) return true;
+  const t = raw.replace(/\s*\([^)]*\)\s*$/, "").replace(/\s+-\s+.*$/, "").replace(/[:.\s]+$/, "").trim();
   const words = t.split(/\s+/);
   if (!RETIRED.test(words[0] ?? "")) return false;
   if (words.every((w) => RETIRED.test(w) || /^(&|and|\/)$/i.test(w))) return true;
-  return /\b(historical|platforms?|skills?|tech|technolog(?:y|ies)|tools?|stack)$/i.test(t);
+  return /\b(historical|platforms?|skills?|systems?|frameworks?|languages?|tech|technolog(?:y|ies)|tools?|stack)$/i.test(t);
 }
 
 // The MCD minus what must never count as evidence: HTML comments, Agent Note
@@ -86,19 +89,23 @@ function sourceText(mcd: string): string {
   const kept: string[] = [];
   let skipLevel = 0;
   let inNote: "" | "quote" | "bullet" = "";
+  let noteIndent = 0;
   for (const line of mcd.replace(/<!--[\s\S]*?-->/g, " ").split("\n")) {
     const h = line.match(/^(#{1,6})\s+(.*)$/);
     if (h && skipLevel && h[1].length <= skipLevel) skipLevel = 0;
     if (h && isLegacyHeading(h[2])) skipLevel = h[1].length;
     if (skipLevel) continue;
     // A note is a quoted block or a bullet. A quoted note runs on through ">"
-    // lines; a bulleted one through its indented continuation lines.
-    if (/^\s*(?:>|[-*])\s*(?:[^\w\s*]+\s*)?\**\s*(?:\w+\s+)?(?:agent note|note for (?:the )?agent)\b/i.test(line)) {
+    // lines and any lazy continuation up to a blank line; a bulleted one through
+    // every line indented deeper than its marker, sub-bullets included.
+    if (/^\s*(?:>|[-*])\s*(?:[^\w\s*]+\s*)?\**\s*(?:\w+\s+){0,2}(?:agent notes?|note for (?:the )?agent)\b/i.test(line)) {
       inNote = /^\s*>/.test(line) ? "quote" : "bullet";
+      noteIndent = line.search(/\S/);
       continue;
     }
-    if (inNote === "quote" && /^\s*>/.test(line)) continue;
-    if (inNote === "bullet" && /^\s+\S/.test(line) && !/^\s*[-*]\s/.test(line)) continue;
+    if (inNote === "quote" && line.trim() && !h) continue;
+    if (inNote === "bullet" && line.trim() && line.search(/\S/) > noteIndent) continue;
+    if (inNote === "bullet" && !line.trim()) continue;
     inNote = "";
     kept.push(line);
   }
@@ -330,21 +337,42 @@ function sentenceWords(text: string, index: number): Set<string> {
   return new Set((sentence.toLowerCase().match(/[a-z]{4,}/g) ?? []).filter((w) => !STOPWORDS.has(w)));
 }
 
-// Split source text into scopes: markdown sections (heading to next heading),
-// and bullet entries (a top-level bullet through its indented and blank-line
-// continuations, up to the next top-level bullet or heading).
-function scopes(text: string): { sections: string[]; entries: string[] } {
-  const sections: string[][] = [[]];
-  const entries: string[][] = [[]];
-  for (const line of text.split("\n")) {
-    if (/^#{1,6}\s/.test(line)) {
-      sections.push([]);
-      entries.push([]);
-    } else if (/^[-*+]\s/.test(line)) entries.push([]);
-    sections[sections.length - 1].push(line);
-    entries[entries.length - 1].push(line);
-  }
-  return { sections: sections.map((l) => normalize(l.join(" "))), entries: entries.map((l) => normalize(l.join(" "))) };
+interface Scope {
+  start: number;
+  end: number;
+  text: string;
+}
+
+// Source scopes as nested ranges: every markdown heading with its sub-headings,
+// and every bullet (at any indent) with the lines indented deeper than its
+// marker. Blank lines don't end a bullet.
+function scopes(text: string): { sections: Scope[]; entries: Scope[] } {
+  const lines = text.split("\n");
+  const indent = (l: string) => l.search(/\S/);
+  const make = (start: number, end: number) => ({ start, end, text: normalize(lines.slice(start, end).join(" ")) });
+  const sections: Scope[] = [make(0, lines.length)];
+  const entries: Scope[] = [];
+  lines.forEach((line, i) => {
+    const h = line.match(/^(#{1,6})\s/);
+    if (h) {
+      let j = i + 1;
+      while (j < lines.length && !(lines[j].match(/^(#{1,6})\s/)?.[1].length! <= h[1].length)) j++;
+      sections.push(make(i, j));
+    }
+    if (/^\s*[-*+]\s/.test(line)) {
+      let j = i + 1;
+      while (j < lines.length && !/^#{1,6}\s/.test(lines[j]) && (!lines[j].trim() || indent(lines[j]) > indent(line))) j++;
+      entries.push(make(i, j));
+    }
+  });
+  return { sections, entries };
+}
+
+// The scopes that contain `term` and hold no smaller scope that also does: a
+// certification is judged by its own bullet, not the list around it.
+function innermost(scopeList: Scope[], term: string): Scope[] {
+  const hits = scopeList.filter((s) => containsTerm(s.text, term));
+  return hits.filter((s) => !hits.some((o) => o !== s && o.start >= s.start && o.end <= s.end && o.end - o.start < s.end - s.start));
 }
 
 // ---------------------------------------------------------------- validate
@@ -403,8 +431,10 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
   };
 
   if (format === "text") {
+    const alone = new RegExp(`^\\s*${DAY_DATE}\\s*$`, "i");
+    const blankAt = (k: number) => k < 0 || k >= rawLines.length || !rawLines[k].trim();
     rawLines.forEach((l, i) => {
-      if (!new RegExp(`^\\s*${DAY_DATE}\\s*$`, "i").test(l)) checkNumbers(l, () => i + 1);
+      if (!(alone.test(l) && blankAt(i - 1) && blankAt(i + 1))) checkNumbers(l, () => i + 1);
     });
     return { findings, checked };
   }
@@ -446,14 +476,17 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
     for (let i = from; i < to; i++) if (blanked[i] !== "\n") blanked[i] = " ";
   };
 
-  const inOneScope = (parts: string[], scope: string[]) =>
-    scope.some((w) =>
-      parts.every((p) => {
-        if (containsTerm(w, p)) return true;
-        const degree = DEGREES.find(([re]) => re.test(p));
-        return Boolean(degree && containsTerm(w, degree[1]));
-      }),
-    );
+  // The term to look a part up by: the part itself, or a degree's full name.
+  const term = (p: string) => (containsTerm(corpus, p) ? p : (DEGREES.find(([re]) => re.test(p))?.[1] ?? p));
+  // All parts must sit in the innermost scope that holds the longest part.
+  const inOneScope = (parts: string[], ...scopeLists: Scope[][]) => {
+    const anchor = term([...parts].sort((x, y) => y.length - x.length)[0]);
+    for (const list of scopeLists) {
+      const home = innermost(list, anchor);
+      if (home.length) return home.some((sc) => parts.every((p) => containsTerm(sc.text, term(p))));
+    }
+    return false;
+  };
 
   const checkHeading = (raw: string, line: number) => {
     const text = stripLatex(raw).replace(/\s+/g, " ");
@@ -476,7 +509,7 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
   const checkCert = (cert: string, line: number) => {
     checked.certifications++;
     if (containsTerm(corpus, cert)) return;
-    if (!inOneScope(headingParts(cert), sourceEntries)) flag("certification", cert, line);
+    if (!inOneScope(headingParts(cert), sourceEntries, sourceSections)) flag("certification", cert, line);
   };
 
   const checkSkills = (cell: string, line: number) => {
@@ -492,12 +525,16 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
   // date wrapped onto its own line inside a bullet is still checked.
   for (const d of findCommands(body, "date", 1)) blank(d.at, d.end);
   if (!resumeShaped) {
+    const bodyLines = body.split("\n");
+    const empty = (k: number) => k < 0 || k >= bodyLines.length || !stripLatex(bodyLines[k]);
     let offset = 0;
-    for (const line of body.split("\n")) {
+    bodyLines.forEach((line, k) => {
       const m = stripComments(line).match(LETTER_DATE);
-      if (m) blank(offset + m.index! + m[1].length, offset + line.length);
+      // Skip it only after \hfill, or when the date is a paragraph of its own;
+      // a date on a wrapped line inside a sentence is still checked.
+      if (m && (m[1] || (empty(k - 1) && empty(k + 1)))) blank(offset + m.index! + m[1].length, offset + line.length);
       offset += line.length + 1;
-    }
+    });
   }
 
   // Employers, titles, degrees, and their dates, in any spacing or nesting.
@@ -534,7 +571,9 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
           ? cells.slice(1).join(" ")
           : part.replace(/\\multicolumn\s*\{[^}]*\}\s*\{[^}]*\}/g, "").replace(/^\s*\{?\s*[^,:{}]{1,40}:\s*/, "");
       const text = stripLatex(cell).replace(/\s+/g, " ");
-      if (text && (cells.length > 1 || text.includes(","))) checkSkills(text, at(offset + lead));
+      // A comma-free row with no & is a header ("Core Skills") only when it
+      // reads like a skills section name; otherwise its text is a skill.
+      if (text && (cells.length > 1 || !SKILLS_NAME.test(text))) checkSkills(text, at(offset + lead));
       offset += part.length;
     }
     blank(m.index, tableEnd);

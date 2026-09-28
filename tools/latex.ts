@@ -1,4 +1,4 @@
-// Shared LaTeX helpers for the validator and the plain-text export.
+// Shared LaTeX parsing helpers.
 
 // Contents of the brace group that opens at s[open], and the index after it.
 export function group(s: string, open: number): [string, number] {
@@ -54,7 +54,7 @@ export function stripLatex(text: string): string {
     .replace(/\\(?:raisebox|vspace|hspace|color|pagestyle|thispagestyle)\*?\s*\{[^}]*\}/g, " ")
     .replace(/\\begin\{(?:tabularx|minipage)\}(?:\[[^\]]*\])?(?:\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\})*/g, " ")
     .replace(/\{,\}/g, ",")
-    .replace(/(\d)(?:\\,|~|\\ |\\thinspace\s*|\u00A0)(\d{3})(?!\d)/g, "$1,$2")
+    .replace(/(\d)(?:\\,|\{\\,\}|~|\\ |\\thinspace\s*|\u00A0)(?=\d{3}(?!\d))/g, "$1,")
     .replace(/\\\\(?:\[[^\]]*\])?/g, " ")
     .replace(/\\([%$&#_])/g, "$1")
     .replace(/\\[,;: !]/g, " ")

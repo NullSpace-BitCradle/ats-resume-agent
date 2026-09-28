@@ -7,6 +7,8 @@ const root = join(import.meta.dir, "..");
 const mcd = readFileSync(join(root, "examples/Master_Career_Document.md"), "utf8");
 const resumePath = join(root, "examples/sample-output/Resume-Alex_Morgan-Example_Corp-Senior_Engineer.tex");
 const resume = readFileSync(resumePath, "utf8");
+const cover = readFileSync(join(root, "examples/sample-output/CoverLetter-Alex_Morgan-Example_Corp-Senior_Engineer.tex"), "utf8");
+const jd = readFileSync(join(root, "examples/Job_Description-Example_Corp-Senior_Engineer.md"), "utf8");
 
 // Swap one exact string in the example resume, failing the test if it is not there.
 function plant(from: string, to: string): string {
@@ -297,6 +299,81 @@ describe("bypasses from the PR #2 review now fail", () => {
     expect(tokens(plant("850 enterprise", "a 45 percentage-point share of enterprise"), "number")).toEqual(["45%"]);
   });
 
+  test("nested certification bullets do not lend each other their years", () => {
+    const nested = mcd.replace(
+      "- AWS Solutions Architect -- Associate (2023)\n- Certified Kubernetes Administrator (CKA) (2022)",
+      "- Certifications earned:\n  - AWS Solutions Architect -- Associate (2023)\n  - Certified Kubernetes Administrator (CKA) (2022)",
+    );
+    expect(nested).not.toBe(mcd);
+    expect(tokens(plant("Associate (2023)", "Associate (2022)"), "certification", nested)).toEqual(["AWS Solutions Architect - Associate (2022)"]);
+    const numbered = mcd.replace(
+      "- AWS Solutions Architect -- Associate (2023)\n- Certified Kubernetes Administrator (CKA) (2022)",
+      "1. AWS Solutions Architect -- Associate (2023)\n2. Certified Kubernetes Administrator (CKA) (2022)",
+    );
+    expect(tokens(plant("Associate (2023)", "Associate (2022)"), "certification", numbered)).toEqual(["AWS Solutions Architect - Associate (2022)"]);
+  });
+
+  test("comma-free skills rows are checked unless they name a skills section", () => {
+    const table = "\\begin{tabularx}{\\textwidth}{>{\\bfseries}l@{\\hspace{12pt}} X}\n";
+    for (const [row, token] of [
+      ["\\multicolumn{2}{l}{Snowflake} \\\\", "Snowflake"],
+      ["\\multicolumn{2}{l}{Streaming: Flink and Spark} \\\\", "Flink and Spark"],
+      ["\\multicolumn{2}{l}{Kafka / Flink / Spark} \\\\", "Kafka / Flink / Spark"],
+    ]) {
+      expect(tokens(plant(table, `${table}${row}\n`), "skill")).toEqual([token]);
+    }
+    expect(tokens(plant("MongoDB, Datadog, Grafana, Prometheus \\\\", "MongoDB, Datadog, Grafana, Prometheus \\\\\n  Snowflake \\\\"), "skill")).toEqual(["Snowflake"]);
+  });
+
+  test("Agent Notes with sub-bullets, a plural, a lazy continuation, or two adjectives", () => {
+    const tex = plant("MongoDB, Datadog", "MongoDB, Kafka, Datadog");
+    for (const n of [
+      "- **Agent Note:** never list these as earned:\n  - Kafka (evaluated only)",
+      "> **Agent Notes:** Kafka evaluated only; never list it.",
+      "> **Agent Note:** keep this private,\nnever mention Kafka.",
+      "> **Very important agent note:** never mention Kafka",
+    ]) {
+      expect(tokens(tex, "skill", mcd.replace("## Work Experience", `${n}\n\n## Work Experience`))).toEqual(["Kafka"]);
+    }
+    // A heading straight after a quoted note is not swallowed into it.
+    const tight = mcd.replace("## Work Experience", "> **Agent Note:** keep this private.\n## Work Experience");
+    expect(validate(resume, tight).findings).toEqual([]);
+  });
+
+  test("a wrapped date in a letter is checked; only a date paragraph of its own is skipped", () => {
+    const wrapped = cover.replace("I would welcome", "I was promoted to team lead on\nJune 1, 2015\nand kept that role. I would welcome");
+    expect(validate(wrapped, mcd, { extraSources: [jd] }).findings.map((f) => f.token)).toEqual(["2015"]);
+  });
+
+  test("a wrapped date in a plain-text resume export is checked", () => {
+    expect(validate("- Promoted to team lead on\nJune 1, 2015\n", mcd, { format: "text" }).findings.map((f) => f.token)).toEqual(["2015"]);
+    expect(validate("Alex Morgan\n\nMarch 10, 2026\n\nDear Hiring Manager,\n", mcd, { format: "text" }).findings).toEqual([]);
+  });
+
+  test("a job description number keeps context across a wrapped line", () => {
+    const tex = cover.replace(
+      "Scaling backend services for an e-commerce platform serving 50M+ monthly active users is precisely",
+      "That scale of 50M+\n    monthly active users is precisely",
+    );
+    expect(tex).not.toBe(cover);
+    expect(validate(tex, mcd, { extraSources: [jd] }).findings).toEqual([]);
+  });
+
+  test("a shared stopword is not shared context", () => {
+    const extra = `${jd}\nWe have 7 offices with great views.`;
+    expect(validate(cover.replace("I would welcome", "I mentored 7 people with care. I would welcome"), mcd, { extraSources: [extra] }).findings.map((f) => f.token)).toEqual(["7"]);
+  });
+
+  test("more legacy title forms and thousands separators", () => {
+    const tex = plant("React, Next.js \\\\", "React, Next.js, jQuery \\\\");
+    for (const title of ["Legacy Skills - do not use", "Skills (Legacy)", "\uD83D\uDDC4\uFE0F Legacy Skills", "Legacy Systems", "Legacy Frameworks", "Old Skills"]) {
+      expect(tokens(tex, "skill", mcd.replace("## Legacy & Historical Platforms", `## ${title}`))).toEqual(["jQuery"]);
+    }
+    expect(validate(plant("2.3 million transactions", "2\\,300\\,000 transactions"), mcd).findings).toEqual([]);
+    expect(tokens(plant("850 enterprise", "4{\\,}500 enterprise"), "number")).toEqual(["4,500"]);
+    expect(tokens(plant("850 enterprise", "45 per-cent of enterprise"), "number")).toEqual(["45%"]);
+  });
+
   test("skills or certifications the validator cannot read fail as coverage, never a silent PASS", () => {
     const start = resume.indexOf("\\begin{tabularx}");
     const end = resume.indexOf("\\end{tabularx}") + "\\end{tabularx}".length;
@@ -396,8 +473,6 @@ describe("honest output passes", () => {
 });
 
 describe("cover letters", () => {
-  const cover = readFileSync(join(root, "examples/sample-output/CoverLetter-Alex_Morgan-Example_Corp-Senior_Engineer.tex"), "utf8");
-  const jd = readFileSync(join(root, "examples/Job_Description-Example_Corp-Senior_Engineer.md"), "utf8");
 
   test("the example cover letter passes with the job description as an extra source", () => {
     expect(validate(cover, mcd, { extraSources: [jd] }).findings).toEqual([]);
