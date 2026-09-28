@@ -135,14 +135,14 @@ There are two ways to use this project. Clone it (steps below) if you want to ed
 
 ### Install as a plugin
 
-This repository is also a Claude Code plugin marketplace. Inside any Claude Code session, run:
+This repository is also a Claude Code plugin marketplace. Inside any Claude Code session, run these, then confirm the install in the `/plugin` panel that the second command opens:
 
 ```
 /plugin marketplace add NullSpace-BitCradle/ats-resume-agent
 /plugin install ats-resume-agent@nullspace-bitcradle
 ```
 
-Or from your shell:
+Or from your shell, where the install finishes directly:
 
 ```bash
 claude plugin marketplace add NullSpace-BitCradle/ats-resume-agent
