@@ -12,8 +12,8 @@ An AI-powered resume and cover letter generator built on [Claude Code](https://c
 
 The project has two agents that work together:
 
-1. **Career Document Builder**: guides you through an interactive interview to create a comprehensive Master Career Document. It can also ingest existing resumes, LinkedIn profile exports, or any career materials you already have as a starting point.
-2. **Resume Writer**: takes your Master Career Document and a job description, then produces a tailored LaTeX resume optimized for Applicant Tracking Systems. You run this each time you apply somewhere.
+1. **Career Document Builder**: Guides you through an interactive interview to create a comprehensive Master Career Document. It can also ingest existing resumes, LinkedIn profile exports, or any career materials you already have as a starting point.
+2. **Resume Writer**: Takes your Master Career Document and a job description, then produces a tailored LaTeX resume optimized for Applicant Tracking Systems. You run this each time you apply somewhere.
 
 The typical flow:
 
@@ -50,7 +50,7 @@ On Windows PowerShell:
 irm https://claude.ai/install.ps1 | iex
 ```
 
-Homebrew (`brew install --cask claude-code`) and WinGet (`winget install Anthropic.ClaudeCode`) also work. Run `claude --version` afterward to confirm the install. See the [setup guide](https://code.claude.com/docs/en/setup) for other options.
+On Windows CMD, run `curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd`. Homebrew (`brew install --cask claude-code`) and WinGet (`winget install Anthropic.ClaudeCode`) also work. Run `claude --version` afterward to confirm the install. See the [setup guide](https://code.claude.com/docs/en/setup) for other options.
 
 You need a Claude Pro, Max, Team, or Enterprise plan, or an Anthropic Console (API) account. The free claude.ai plan does not include Claude Code. See [authentication](https://code.claude.com/docs/en/authentication) for details. Each resume generation typically uses the Sonnet model and takes 30-60 seconds. The career document builder interview takes longer depending on career complexity.
 
@@ -110,13 +110,13 @@ If you don't have LaTeX installed and don't want to install it locally, you can 
 
 3. **Create your Master Career Document** (choose one):
 
-   **Option A: Guided interview (recommended):**
+   **Option A, guided interview (recommended):**
    ```
    Help me build my career document
    ```
    The `career-doc-builder` agent will walk you through an interactive interview to produce a comprehensive 18-section MCD. If you have existing resumes, LinkedIn exports, or other career materials, it can ingest those as a starting point.
 
-   **Option B: Manual:**
+   **Option B, manual:**
    ```bash
    cp examples/Master_Career_Document.md Master_Career_Document.md
    ```
