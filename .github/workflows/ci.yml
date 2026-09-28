@@ -66,10 +66,13 @@ jobs:
         run: |
           curl -fsSL https://claude.ai/install.sh | bash
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Plugin agents match the project agents clone users load
+        run: diff -r agents .claude/agents || { echo "agents/ and .claude/agents/ must be identical. Edit both, or copy one over the other."; exit 1; }
       - name: Validate plugin and marketplace manifests
         run: |
           claude --version
           claude plugin validate .
+          claude plugin validate agents
       - name: Install the plugin from this checkout and list its agents
         run: |
           claude plugin marketplace add ./

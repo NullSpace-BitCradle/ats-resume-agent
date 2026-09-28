@@ -15,9 +15,5 @@
     "ats",
     "latex",
     "job-search"
-  ],
-  "agents": [
-    "./.claude/agents/ats-resume-writer.md",
-    "./.claude/agents/career-doc-builder.md"
   ]
 }

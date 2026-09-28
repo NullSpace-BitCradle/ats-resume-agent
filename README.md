@@ -288,6 +288,7 @@ ats-resume-agent/
 |-- CLAUDE.md                 # Instructions for Claude Code (you don't need to edit this)
 |-- setup.sh                  # Dependency checker and installer
 |-- package.json              # Bun scripts: validate, test
+|-- agents/                   # Same agents, in the plugin layout (kept identical by CI)
 |-- .claude-plugin/
 |   |-- plugin.json           # Plugin manifest (agents, metadata)
 |   `-- marketplace.json      # Lets /plugin marketplace add install from this repo
