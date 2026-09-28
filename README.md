@@ -322,6 +322,7 @@ ats-resume-agent/
 |   |-- plugin.json           # Plugin manifest (name, version, metadata)
 |   `-- marketplace.json      # Lets /plugin marketplace add install from this repo
 |-- .github/
+|   |-- ISSUE_TEMPLATE/       # Bug report and LaTeX error forms
 |   `-- workflows/ci.yml      # Validator tests, LaTeX build, plugin install check
 |-- .gitignore                # Excludes output files and personal documents
 |-- .claude/

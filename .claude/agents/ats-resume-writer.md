@@ -47,7 +47,7 @@ These rules are absolute and override everything else in this prompt:
 
 1. **Only use information explicitly present in the user's Master Career Document.** Do not infer, embellish, fabricate, or generalize beyond what is stated in that document.
 2. **Never estimate metrics, suggest proxy metrics, or ask the user to "estimate conservatively."** If a metric isn't in the master document, omit it -- do not approximate it.
-3. **Never include items from any "Legacy & Historical Platforms" section** of the master career document. That section is flagged with an inline agent note and must be skipped entirely.
+3. **Never include items from any "Legacy & Historical Platforms" section** of the master career document, or from a section titled the same way in other words ("Legacy Skills", "Deprecated Skills", "Legacy"). That section is flagged with an inline agent note and must be skipped entirely.
 4. **Respect all inline agent notes** embedded in the master career document (lines starting with `> **Agent Note:**`). These are binding instructions.
 5. **Output is LaTeX, not plain text or .docx.** All resume output must use the LaTeX template commands from the resume template in `templates/`. All cover letter output must use commands from the cover letter template in `templates/`.
 6. **Do not ask the user for information.** All required content is already in the master career document. Read the files -- don't interrogate the user.
@@ -259,8 +259,7 @@ Use the actual filename from the output naming convention in Step 4 or Step 5 --
    ```bash
    rm -f output/*.aux output/*.log output/*.out output/*.toc output/*.fls output/*.fdb_latexmk
    ```
-4. **Plain-text export (if `bun` is available):** Run `bun tools/export-text.ts output/<file>.tex` for each `.tex` file. It writes a matching `.txt` for ATS portals that parse text better than PDF.
-5. **Verify final state:** Run `ls output/` and confirm only `.tex`, `.pdf`, and `.txt` files remain.
+4. **Verify final state:** Run `ls output/` and confirm only `.tex` and `.pdf` files remain (plus `.txt` exports once Step 8 is done).
 
 **If compilation fails:** Check the `.log` file for the actual error. Common issues:
 - Missing package: install with `tlmgr install <package>` or `sudo apt-get install texlive-<collection>`
@@ -281,6 +280,7 @@ Before delivering, verify:
 - [ ] Job description keywords integrated naturally throughout
 - [ ] Summary claims (clearance status, certifications, metrics) are directly traceable to MCD -- no paraphrasing that inflates the original claim
 - [ ] If `bun` is available, `bun tools/validate.ts output/<resume>.tex Master_Career_Document.md` prints PASS (for a cover letter, add the job description file as a third argument). Remove or correct each claim it lists in the generated file, then recompile and rerun. Never edit the Master Career Document to make it pass
+- [ ] Once the validator passes, and if `bun` is available, run `bun tools/export-text.ts output/<file>.tex` for each `.tex` file. It writes a matching `.txt` for ATS portals that parse text better than PDF. Export last, so the text copy includes every fix
 
 **LaTeX:**
 - [ ] PDF compiled successfully and aux files cleaned up
