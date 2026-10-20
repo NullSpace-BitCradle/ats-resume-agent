@@ -262,6 +262,7 @@ What it cannot prove:
 - **Shorthand like `45m` reads as 45 million.** Write out minutes.
 - **Synonyms fail.** If the MCD says PostgreSQL and the resume says Postgres, it fails. The fix is to add the term to your MCD if it's true.
 - **Prose isn't parsed for names.** An employer mentioned only in the summary paragraph isn't checked.
+- **Only the skills table is checked.** Once the validator reads a skills table, skills written as plain text beside it, or named in a bullet, aren't checked. The `coverage` finding fires only when no table can be read at all.
 
 Treat a PASS as "nothing was invented," not "every sentence is accurate," and still read the output.
 
