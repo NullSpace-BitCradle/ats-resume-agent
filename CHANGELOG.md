@@ -1,9 +1,12 @@
 # Changelog
 
-## Unreleased
+## v1.3.0: Rewritten resume writer, Windows line endings
 
+- Fixed: the validator missed every Master Career Document heading when the file had Windows (CRLF) line endings, so content under Legacy & Historical Platforms passed as if it were current, and `%` comments in a CRLF `.tex` were not stripped. The validator and the plain-text export now normalize line endings, `.gitattributes` keeps checkouts LF, and CI runs the validator tests on Windows too. If you validated on Windows before this release, run the validator again
 - Rewrote the resume writer prompt around its failure modes: the job description selects and emphasizes MCD content but never supplies it, the skills table gets an explicit check, LaTeX special characters must be escaped, and missing packages are reported instead of installed with sudo. The description no longer invites metric invention or asking the user for details. About 40 percent of the original length (118 lines, down from 304)
 - In the model comparison, Haiku went from 1 of 4 passing runs with the original prompt to 4 of 4 with the new one; Sonnet and Opus passed every run with both
+- Docs: the template source is credited, LICENSE stays pure MIT with the template notice beside the template, and "What it cannot prove" names skills written outside the skills table
+- Plugin version bumped to 1.3.0, so `/plugin marketplace update` delivers the rewritten writer to installed users
 
 ## v1.2.0: Checked zero fabrication, CI, and plugin install
 
