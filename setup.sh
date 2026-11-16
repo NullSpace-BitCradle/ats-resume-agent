@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ATS Resume Agent - Dependency Checker & Installer
-# Checks for Claude Code and LaTeX, offers to install what's missing.
+# Checks for Claude Code, Bun, and LaTeX, offers to install what's missing.
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -37,6 +37,14 @@ if command -v pdflatex &>/dev/null; then
 else
     fail "pdflatex is not installed (needed to compile resumes to PDF)"
     missing+=("pdflatex")
+fi
+
+# --- Bun (runs the zero-fabrication validator, text export, and document ingest) ---
+if command -v bun &>/dev/null; then
+    ok "Bun is installed ($(bun --version 2>/dev/null || echo 'version unknown'))"
+else
+    fail "Bun is not installed (without it, resumes are NOT checked by the zero-fabrication validator)"
+    missing+=("bun")
 fi
 
 # --- Check LaTeX packages (only if pdflatex exists) ---
@@ -84,6 +92,20 @@ for dep in "${missing[@]}"; do
                 warn "Skipped Claude Code (install later: curl -fsSL https://claude.ai/install.sh | bash)"
             fi
             ;;
+        bun)
+            if [[ "$(uname)" == MINGW* || "$(uname)" == MSYS* || "$(uname)" == CYGWIN* ]]; then
+                warn "On Windows, install Bun from PowerShell: powershell -c \"irm bun.sh/install.ps1 | iex\" (see https://bun.com/docs/installation)"
+                continue
+            fi
+            read -rp "Install Bun? [y/N] " yn
+            if [[ "$yn" =~ ^[Yy]$ ]]; then
+                echo "Installing Bun..."
+                curl -fsSL https://bun.com/install | bash
+                ok "Bun installed (open a new terminal, or add ~/.bun/bin to PATH, before running it)"
+            else
+                warn "Skipped Bun. The resume writer will report VALIDATOR NOT RUN until it is installed (curl -fsSL https://bun.com/install | bash)"
+            fi
+            ;;
         pdflatex)
             if [[ "$(uname)" == "Darwin" ]]; then
                 read -rp "Install MacTeX via Homebrew? [y/N] " yn
@@ -102,11 +124,25 @@ for dep in "${missing[@]}"; do
                 else
                     warn "Skipped LaTeX (install later: sudo apt-get install texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra cm-super)"
                 fi
+            elif [[ "$(uname)" == MINGW* || "$(uname)" == MSYS* || "$(uname)" == CYGWIN* ]]; then
+                warn "On Windows, install MiKTeX from https://miktex.org/download, then run this script again. See the README's Windows section."
             else
                 warn "Could not detect package manager. Install pdflatex manually. See README for instructions."
             fi
             ;;
         texpackages)
+            if command -v miktex &>/dev/null; then
+                # MiKTeX (Windows): no sudo, no tlmgr. Package ids differ from TeX Live's.
+                read -rp "Install missing LaTeX packages via MiKTeX? [y/N] " yn
+                if [[ "$yn" =~ ^[Yy]$ ]]; then
+                    miktex packages require fontawesome5 fontawesome cormorantgaramond charter \
+                        ragged2e microtype lastpage bookmark latex-tools enumitem titlesec fancyhdr cm-super
+                    ok "LaTeX packages installed"
+                else
+                    warn "Skipped LaTeX packages (install later in MiKTeX Console, or with: miktex packages install <package>)"
+                fi
+                continue
+            fi
             read -rp "Install missing LaTeX packages via tlmgr? [y/N] " yn
             if [[ "$yn" =~ ^[Yy]$ ]]; then
                 sudo tlmgr update --self

@@ -1,0 +1,10 @@
+# Text files are LF in the repo and in every checkout, Windows included.
+# The validator also normalizes line endings itself; this keeps diffs clean.
+* text=auto eol=lf
+*.pdf binary
+*.png binary
+*.jpg binary
+*.docx binary
+*.doc binary
+*.pages binary
+*.odt binary

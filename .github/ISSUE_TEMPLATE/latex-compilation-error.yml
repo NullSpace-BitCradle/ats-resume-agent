@@ -11,15 +11,17 @@ body:
         - macOS (MacTeX)
         - macOS (BasicTeX)
         - Windows (WSL)
+        - Windows (native, MiKTeX)
+        - Windows (native, TeX Live)
         - Other
     validations:
       required: true
   - type: input
     id: texlive-version
     attributes:
-      label: TeX Live Version
-      description: "Run `pdflatex --version` and paste the first line"
-      placeholder: "pdfTeX 3.14159265-2.6-1.40.25 (TeX Live 2024)"
+      label: TeX distribution and version
+      description: "Run `pdflatex --version` and paste the first line (it names TeX Live or MiKTeX)"
+      placeholder: "pdfTeX 3.14159265-2.6-1.40.25 (TeX Live 2024) or (MiKTeX 25.12)"
     validations:
       required: true
   - type: dropdown

@@ -29,6 +29,9 @@
 \usepackage{bookmark}
 \usepackage{lastpage}
 \usepackage{tabularx}
+% T1 encoding: without it a | in the text prints, and reaches ATS text, as an
+% em dash (the default OT1 fonts have no | glyph).
+\usepackage[T1]{fontenc}
 
 
 % Sans-Serif
@@ -176,14 +179,15 @@
   %---------%
 
   \documentTitle{Your Name}{
+    \raisebox{-0.15\height} \faMapMarker~City, State ~ | ~
     \href{tel:1234567890}{
-      \raisebox{-0.05\height} \faPhone\ 123-456-7890} ~ | ~
+      \raisebox{-0.05\height} \faPhone~123-456-7890} ~ | ~
     \href{mailto:you@example.com}{
-      \raisebox{-0.15\height} \faEnvelope\ you@example.com} ~ | ~
+      \raisebox{-0.15\height} \faEnvelope~you@example.com} ~ | ~
     \href{https://linkedin.com/in/yourprofile/}{
-      \raisebox{-0.15\height} \faLinkedin\ linkedin.com/in/yourprofile} ~ | ~
+      \raisebox{-0.15\height} \faLinkedin~linkedin.com/in/yourprofile} ~ | ~
     \href{https://github.com/yourusername}{
-      \raisebox{-0.15\height} \faGithub\ github.com/yourusername}
+      \raisebox{-0.15\height} \faGithub~github.com/yourusername}
   }
 
   %---------%

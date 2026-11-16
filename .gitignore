@@ -28,3 +28,15 @@ Job_Description-*.md
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Per-candidate workspaces (candidates/<name>/ holds someone's MCD, job
+# descriptions, and output) and source resumes dropped in for the builder.
+/candidates/
+/inputs/
+
+# Old resumes in office formats, at the project root
+/*.doc
+/*.docx
+/*.pages
+/*.odt
+/*.rtf

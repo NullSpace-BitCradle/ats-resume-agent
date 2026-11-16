@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/NullSpace-BitCradle/ats-resume-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/NullSpace-BitCradle/ats-resume-agent/actions/workflows/ci.yml)
 
-> v1.2.0. Prefer the original? It is preserved as the [v1.1.0 release](https://github.com/NullSpace-BitCradle/ats-resume-agent/releases/tag/v1.1.0) and the [`v1` branch](https://github.com/NullSpace-BitCradle/ats-resume-agent/tree/v1). See [CHANGELOG.md](CHANGELOG.md) for what changed.
+> v1.3.0. Prefer the original? It is preserved as the [v1.1.0 release](https://github.com/NullSpace-BitCradle/ats-resume-agent/releases/tag/v1.1.0) and the [`v1` branch](https://github.com/NullSpace-BitCradle/ats-resume-agent/tree/v1). See [CHANGELOG.md](CHANGELOG.md) for what changed.
 
 An AI-powered resume and cover letter generator built on [Claude Code](https://code.claude.com/docs). It creates ATS-optimized, LaTeX-formatted resumes tailored to specific job descriptions. It also includes a guided career document builder that helps you create the source material through an interactive interview.
 
@@ -15,7 +15,7 @@ An AI-powered resume and cover letter generator built on [Claude Code](https://c
 The project has two agents that work together:
 
 1. **Career Document Builder**: Guides you through an interactive interview to create a comprehensive Master Career Document. It can also ingest existing resumes, LinkedIn profile exports, or any career materials you already have as a starting point.
-2. **Resume Writer**: Takes your Master Career Document and a job description, then produces a tailored LaTeX resume optimized for Applicant Tracking Systems. You run this each time you apply somewhere.
+2. **Resume Writer**: Takes your Master Career Document and a job description, then produces a tailored LaTeX resume optimized for Applicant Tracking Systems. You run this each time you apply somewhere. With no job description, it writes a general resume aimed at the target titles in your MCD.
 
 The typical flow:
 
@@ -81,11 +81,23 @@ sudo tlmgr install fontawesome5 fontawesome CormorantGaramond charter \
   ragged2e microtype lastpage bookmark tabularx enumitem titlesec fancyhdr cm-super
 ```
 
+**Windows (native, MiKTeX):**
+
+[MiKTeX](https://miktex.org/download) is the usual native Windows LaTeX. Install it, then let it fetch packages in one of two ways:
+
+- In MiKTeX Console, under Settings, set "Install missing packages on-the-fly" to **Always**. The first compile then downloads what it needs, which can take a few minutes. With the default ("Ask"), MiKTeX opens an install dialog in the middle of a compile, and a compile run by an agent waits on it and looks hung.
+- Or install everything up front, from PowerShell or Git Bash:
+  ```powershell
+  miktex packages require fontawesome5 fontawesome cormorantgaramond charter ragged2e microtype lastpage bookmark latex-tools enumitem titlesec fancyhdr cm-super
+  ```
+
+The `sudo` and `tlmgr` commands elsewhere in this README don't apply to MiKTeX; its package names are mostly the same, but in lowercase (`cormorantgaramond`), and `tabularx` comes in `latex-tools`. If a compile still fails right after packages were installed, for example the cover letter with `auto expansion is only possible with scalable fonts`, run it once more before digging further: in testing, a second run passed with nothing else changed. TeX Live for Windows also works, and so does WSL with the Ubuntu instructions above. `./setup.sh` runs in Git Bash and knows about MiKTeX.
+
 **Important:** The resume template uses `fontawesome5` and the cover letter template uses `fontawesome`. These are separate packages, and both must be installed for full functionality.
 
 ### Bun (for the validator and text export)
 
-The [zero-fabrication validator](#verify-zero-fabrication) and the [plain-text export](#plain-text-export) run on [Bun](https://bun.com). Resume generation works without it, but the agent skips those two steps. On macOS, Linux, or WSL:
+The [zero-fabrication validator](#verify-zero-fabrication), the [plain-text export](#plain-text-export), and the [document reader](#reading-old-resumes) run on [Bun](https://bun.com). Resume generation works without it, but nothing gets checked: the agent skips the validator and the export and says `VALIDATOR NOT RUN` in its final message. `./setup.sh` checks for Bun and offers to install it. On macOS, Linux, or WSL:
 
 ```bash
 curl -fsSL https://bun.com/install | bash
@@ -106,6 +118,8 @@ If `pdflatex` fails with `File 'X.sty' not found`, install the missing package:
 sudo tlmgr install <package-name>
 ```
 
+On MiKTeX, use `miktex packages install <package-name>` or MiKTeX Console instead (no `sudo`).
+
 If you don't have LaTeX installed and don't want to install it locally, you can still use the agent to generate the `.tex` files and compile them using [Overleaf](https://www.overleaf.com/) or another online LaTeX editor.
 </details>
 
@@ -123,7 +137,7 @@ There are two ways to use this project. Clone it (steps below) if you want to ed
    ```bash
    ./setup.sh
    ```
-   This checks for Claude Code and LaTeX, and offers to install anything missing.
+   This checks for Claude Code, Bun, and LaTeX, and offers to install anything missing.
 
 3. **Create your Master Career Document** (choose one):
 
@@ -131,7 +145,7 @@ There are two ways to use this project. Clone it (steps below) if you want to ed
    ```
    Help me build my career document
    ```
-   The `career-doc-builder` agent will walk you through an interactive interview to produce a comprehensive 18-section MCD. If you have existing resumes, LinkedIn exports, or other career materials, it can ingest those as a starting point.
+   The `career-doc-builder` agent will walk you through an interactive interview to produce a comprehensive MCD of up to 19 sections. If you have existing resumes (Word, Pages, OpenDocument, RTF, PDF, or text), LinkedIn exports, or other career materials, it can ingest those as a starting point.
 
    **Option B, manual:**
    ```bash
@@ -139,7 +153,7 @@ There are two ways to use this project. Clone it (steps below) if you want to ed
    ```
    Edit `Master_Career_Document.md` with your real career data. See the example file for the expected format and available features like agent notes and legacy sections.
 
-   **Note:** `Master_Career_Document.md` and `Job_Description-*.md` files in the project root are gitignored by default to prevent accidentally committing personal information. The example files in `examples/` are tracked normally.
+   **Note:** `Master_Career_Document.md` and `Job_Description-*.md` files are gitignored by default to prevent accidentally committing personal information, and so are the `candidates/` and `inputs/` folders and any `.doc`, `.docx`, `.pages`, `.odt`, or `.rtf` file in the project root. The example files in `examples/` are tracked normally.
 
 4. **Start Claude Code in the project directory:**
    ```bash
@@ -164,7 +178,7 @@ claude plugin marketplace add NullSpace-BitCradle/ats-resume-agent
 claude plugin install ats-resume-agent@nullspace-bitcradle
 ```
 
-That installs both agents (`ats-resume-writer` and `career-doc-builder`) along with the LaTeX templates and the validator. Then work from any folder that holds your `Master_Career_Document.md` and a `Job_Description-*.md` file. Generated files go to `output/` in that folder. You still need `pdflatex` for PDFs (see [Prerequisites](#latex-for-pdf-compilation)), and Bun if you want the validator.
+That installs both agents (`ats-resume-writer` and `career-doc-builder`) along with the LaTeX templates and the validator. Then work from any folder that holds your `Master_Career_Document.md` and, for a tailored resume, a `Job_Description-*.md` file. Generated files go to `output/` in that folder (or in `candidates/<name>/output/`, see [Working on Someone Else's Behalf](#working-on-someone-elses-behalf)). You still need `pdflatex` for PDFs (see [Prerequisites](#latex-for-pdf-compilation)), and Bun for the validator, the text export, and reading old resumes.
 
 To update later, run `/plugin marketplace update nullspace-bitcradle`.
 
@@ -197,10 +211,34 @@ The agent will:
 3. Select the most relevant experience and skills
 4. Generate a `.tex` file with ATS-optimized content
 5. Compile it to PDF using `pdflatex`
-6. Run the validator and fix any claim it flags (if Bun is installed)
+6. Run the validator and fix any claim it flags (if Bun is installed; otherwise it says `VALIDATOR NOT RUN`)
 7. Write a plain-text copy for application forms (if Bun is installed)
 
 Output files are saved to the `output/` directory.
+
+### Generate a General Resume
+
+With no job description, ask for a general resume:
+
+```
+General resume from my career document
+```
+
+The agent aims it at the target titles in your MCD's "Professional Identity & Positioning" section, follows its "Notes for Resume Customization", and saves it as `output/Resume-[Name]-General.tex`. It's a good first resume after building an MCD, and a fallback for applications with no posting. Cover letters still need a job description.
+
+### Working on Someone Else's Behalf
+
+To build an MCD or a resume for a family member or a client, give them a folder of their own:
+
+```
+candidates/
+  riley/
+    Master_Career_Document.md
+    Job_Description-Example_Clinic-Office_Manager.md
+    output/
+```
+
+Name the candidate in the request ("general resume for riley", "build an MCD for riley from the files in inputs/") and both agents read and write only inside that folder. `candidates/` and `inputs/` (a place to drop their old resumes) are gitignored. The root-level files keep working as before for your own documents.
 
 ### Review and Iterate
 
@@ -228,9 +266,11 @@ The zero-fabrication promise is checked in code, not just in the prompt. The val
 - **Certifications:** each item, and any loose text, under a Certifications, Licenses, or Credentials heading or section. The name, issuer, and year must appear together in one MCD bullet, so when each certification is its own bullet, a real certification with a shifted year still fails. An entry can run across several lines.
 - **Skills:** each item in the skills table, including rows that wrap across lines. An acronym passes when the MCD spells out the phrase it stands for (`TDD` for Test-Driven Development), and `AWS (EC2, Lambda)` in the MCD backs `AWS Lambda`.
 
-These never count as a source: the "Legacy & Historical Platforms" section at any heading level (and titles like "Legacy Skills", "Deprecated Skills", or plain "Legacy"), Agent Notes, whether a quoted block or a bullet (a note saying "never list CISSP" is not evidence of CISSP), HTML comments, link targets, and the table of contents.
+These never count as a source: the "Legacy & Historical Platforms" section at any heading level (and titles like "Legacy Skills", "Deprecated Skills", or plain "Legacy"), Agent Notes, whether a quoted block or a bullet (a note saying "never list CISSP" is not evidence of CISSP), HTML comments, link targets, and the table of contents. Neither do the sections that hold wishes and instructions rather than history: Professional Identity & Positioning (target titles are roles you want, not roles you held), Work Preferences, and Notes for Resume Customization (a note saying "leave out roles older than 15 years" is not 15 years of experience). The resume writer still reads them for direction; they just can't back a claim.
 
 It also flags an unescaped `%` after a number (`34%` instead of `34\%`). LaTeX treats that `%` as the start of a comment, so the rest of the line silently disappears from the PDF even though `pdflatex` reports success.
+
+It also checks the skills table's structure. Every row must end with `\\` and have exactly one unescaped `&`. When a `\\` is lost, two rows run together and the skills would otherwise come out as misleading merged tokens, so the validator reports the missing terminator as a `latex` finding on the row that lost it and still checks each row's skills on their own. An unescaped `&` in a category label is reported the same way.
 
 If the resume has a skills section (Skills, Core Competencies, Technical Proficiencies, and similar names) or a certifications heading the validator cannot read, for example skills written as plain text instead of the template's table, it reports a `coverage` finding instead of passing. An unfamiliar layout fails loudly; it never passes silently.
 
@@ -257,7 +297,7 @@ The validator refuses extra sources for a file with resume structure. Everything
 What it cannot prove:
 
 - **It matches values, not sentences.** If a real number, title, or date shows up attached to the wrong role, the validator will not notice.
-- **Parts of a heading can be combined within one MCD section.** Any parts found in the same section pass together, so a target title and a held title, or a title and a word from that role's bullets, can be joined into one heading.
+- **Parts of a heading can be combined within one MCD section.** Any parts found in the same section pass together, so two titles from one employer's history, or a title and a word from that role's bullets, can be joined into one heading.
 - **A posting's metric can be claimed as your own** if the sentence shares words with the posting's sentence.
 - **Shorthand like `45m` reads as 45 million.** Write out minutes.
 - **Synonyms fail.** If the MCD says PostgreSQL and the resume says Postgres, it fails. The fix is to add the term to your MCD if it's true.
@@ -274,7 +314,24 @@ Some applicant tracking systems read plain text more reliably than a PDF, and ma
 bun tools/export-text.ts output/Resume-Your_Name-Company-Role.tex
 ```
 
-It writes `output/Resume-Your_Name-Company-Role.txt` (pass a second argument to choose the path). It also handles cover letters. The `.tex` stays the source of truth. The export is derived from it, so run the validator on the `.txt` too if you edit it by hand.
+It writes `output/Resume-Your_Name-Company-Role.txt` (pass a second argument to choose the path). It also handles cover letters. The header line keeps every contact item, plain-text ones such as the location included. The `.tex` stays the source of truth. The export is derived from it, so run the validator on the `.txt` too if you edit it by hand.
+
+### Reading Old Resumes
+
+Old resumes often come as Word, Pages, or OpenDocument files, which the agents can't read directly. The career document builder converts them first with `tools/ingest.ts`, and you can run it yourself:
+
+```bash
+bun tools/ingest.ts inputs/resume-2012.docx inputs/resume-2016.pages --out inputs/text
+```
+
+That writes `inputs/text/resume-2012.txt` and `inputs/text/resume-2016.txt`. Without `--out`, the text prints to the terminal. It reads:
+
+- **`.docx`, `.odt`, `.rtf`** with its own parsers, no other software needed. Headers come first, since resumes often keep the name and contact line there.
+- **`.pages`** best effort, also with no other software: it decodes the document's text from the file, which can carry stray style names. It also saves the image of page one (`<name>.preview.jpg`) so you can compare. The decoder was checked against real iWork files from a public test corpus, but not yet against a real Pages resume.
+- **`.doc`** (Word 97-2003) through whatever converter is installed: LibreOffice (`soffice`), pandoc, macOS `textutil`, `antiword`, or `catdoc`. On a Mac, `textutil` is built in. Elsewhere, installing [LibreOffice](https://www.libreoffice.org/) is the simplest route. The same converters are a fallback when the built-in parsers can't read a file.
+- **`.pdf`, `.md`, `.txt`** need no conversion; the agents read them directly.
+
+When nothing can read a file, it says what it tried and asks you to export the document as a PDF from the app that made it, or paste the text.
 
 ### Build or Update Your Career Document
 
@@ -294,18 +351,26 @@ Review my career document for gaps
 Update my MCD with my new role
 ```
 
+Or compile one from someone's documents when they aren't there to interview:
+
+```
+Compile a career document for riley from the files in inputs/; they aren't here to answer questions
+```
+
+Compile mode writes facts from the documents only, in their wording: no suggested duties, no web search, no new summaries. Where documents disagree it uses the most recent one and lists the conflict; missing dates, missing contact details, and gaps go in an "Open questions" HTML comment at the top, which the validator ignores. The document is marked as compiled and unconfirmed, with an Agent Note telling the resume writer it holds nothing the sources lacked. Run the builder again with the candidate present and it starts from those open questions.
+
 #### How the Career Document Builder Works
 
 The agent runs a multi-phase interview that builds your career document section by section:
 
 1. **Intake**: Feed it existing resumes, LinkedIn exports, or any career materials you have. It extracts roles, skills, metrics, and dates as a baseline. Starting from scratch is fine too.
 2. **Identity & Positioning**: Establishes your target titles, value proposition, and writes 2-4 genuinely different professional summary angles.
-3. **Skills Inventory**: Walks through skill categories relevant to your field, suggests gaps, and separates current skills from legacy ones.
-4. **Work Experience**: The core of the interview. Goes role by role (most recent first), probing for metrics, suggesting common responsibilities you may have missed, and offering agent notes where context matters.
-5. **Supporting Sections**: Education, certifications, publications, compliance expertise, volunteer work, and positioning guidance.
+3. **Skills Inventory**: Walks through the skill categories of your own field, whatever it is, suggests gaps, and separates current skills from legacy ones.
+4. **Work Experience**: The core of the interview. Goes role by role (most recent first), probing for metrics, suggesting common responsibilities you may have missed, and offering agent notes where context matters. It asks once, gently, about any gap of more than 6 months, and records a career break only if you want one, with the reason in your words (see [Career Breaks](#career-breaks)).
+5. **Supporting Sections**: Education, certifications and licenses, volunteer work, and positioning guidance, plus publications, project highlights, and compliance expertise only when your field has them.
 6. **Synthesis**: Revises your summaries with the full career context, curates a highlight reel of your strongest metrics, and delivers the final document.
 
-The output is a single Markdown file with 18 structured sections. The interview typically takes 30-60 minutes depending on career complexity and how much existing material you provide. Once complete, you reuse this document every time you generate a resume, with no re-interviewing.
+The output is a single Markdown file with up to 19 structured sections: 18, plus Legacy & Historical Platforms, with the three field-specific ones only when they apply. The interview typically takes 30-60 minutes depending on career complexity and how much existing material you provide. Once complete, you reuse this document every time you generate a resume, with no re-interviewing.
 
 ## Project Structure
 
@@ -324,7 +389,8 @@ ats-resume-agent/
 |   `-- marketplace.json      # Lets /plugin marketplace add install from this repo
 |-- .github/
 |   |-- ISSUE_TEMPLATE/       # Bug report and LaTeX error forms
-|   `-- workflows/ci.yml      # Validator tests, LaTeX build, plugin install check
+|   |-- scripts/version-bump.sh  # CI: shipped files changed since the last tag need a new plugin version
+|   `-- workflows/ci.yml      # Tests, version check, LaTeX build, plugin install check
 |-- .gitignore                # Excludes output files and personal documents
 |-- .claude/
 |   `-- agents/
@@ -335,6 +401,7 @@ ats-resume-agent/
 |   |-- validate.ts                # Zero-fabrication validator
 |   |-- latex.ts                   # Shared LaTeX parsing helpers
 |   |-- export-text.ts             # Plain-text export for ATS portals
+|   |-- ingest.ts                  # Old resumes (.docx, .doc, .odt, .rtf, .pages) to text
 |   `-- *.test.ts                  # Tests (bun test)
 |-- templates/
 |   |-- resume-template.tex        # LaTeX resume template (CC-BY-4)
@@ -348,16 +415,18 @@ ats-resume-agent/
 |       |-- CoverLetter-Alex_Morgan-Example_Corp-Senior_Engineer.tex  # Example cover letter
 |       |-- resume-preview.pdf     # Blank resume template, rendered
 |       `-- cover-letter-preview.pdf  # Blank cover letter template, rendered
-`-- output/                        # Generated resumes go here (gitignored)
+|-- output/                        # Generated resumes go here (gitignored)
+|-- candidates/                    # Optional: one folder per person you work for (gitignored)
+`-- inputs/                        # Optional: old resumes to read (gitignored)
 ```
 
 ## Master Career Document Format
 
-The `career-doc-builder` agent produces a comprehensive 18-section MCD. You can also create one manually; the resume writer agent handles both formats. Key sections:
+The `career-doc-builder` agent produces a comprehensive MCD of up to 19 sections (18, plus Legacy & Historical Platforms; publications, project highlights, and compliance expertise appear only when your field has them). You can also create one manually; the resume writer agent handles both formats. Key sections:
 
 | Section | Purpose |
 |---------|---------|
-| **Contact Information** | Name, phone, email, LinkedIn, GitHub |
+| **Contact Information** | Name, location, phone, email, LinkedIn, portfolio links |
 | **Professional Identity & Positioning** | Target titles and core value proposition |
 | **Professional Summaries** | 2-4 different summary angles for different role types |
 | **Hybrid Strengths** | Cross-domain strengths (section name adapts to your field) |
@@ -370,7 +439,24 @@ The `career-doc-builder` agent produces a comprehensive 18-section MCD. You can 
 | **Notes for Resume Customization** | Positioning angles and metrics guidance by role type |
 | **Legacy & Historical Platforms** | Outdated skills to exclude from resumes |
 
-See `examples/Master_Career_Document.md` for the full 18-section structure with all available sections.
+See `examples/Master_Career_Document.md` for the full structure with all available sections.
+
+### Career Breaks
+
+Time away from work (caregiving, raising children, health, study, relocation) can be recorded as its own entry under Work Experience, in its place in the timeline:
+
+```markdown
+### Career Break -- Full-time study
+**June 2014 -- December 2015**
+
+- Completed an evening Spanish course
+
+> **Agent Note:** Show this as its own entry; keep the reason as written.
+```
+
+The reason is yours to word, and the bullets (courses, volunteering) are optional. The resume writer shows it as its own entry (`\headingBf{Career Break}{dates}`, then the reason) and never invents an explanation for a gap the MCD doesn't record. The validator checks the heading and dates like any other role, so a break the MCD doesn't have fails.
+
+How far back a resume goes is measured from the end of your most recent role, not from today, so a break doesn't push your earlier career off the page, and the writer never drops a role that would open a gap the MCD doesn't have. Your Notes for Resume Customization can override this.
 
 ### Agent Notes
 
@@ -394,7 +480,7 @@ Any content under a "Legacy & Historical Platforms" heading is automatically exc
 
 **One source of truth:** All content comes from the Master Career Document. The agent never asks you for information during generation. It reads the files and produces output.
 
-**Checked, not trusted:** The prompt tells the agent not to fabricate, and the validator checks that it didn't. CI runs the validator tests, builds every template and example with `pdflatex`, and installs the plugin on every push.
+**Checked, not trusted:** The prompt tells the agent not to fabricate, and the validator checks that it didn't. CI runs the validator tests, builds every template and example with `pdflatex`, installs the plugin, and checks that a change to the agents, tools, or templates since the last release comes with a new plugin version, on every push.
 
 ## Customization
 
@@ -414,7 +500,7 @@ The LaTeX templates in `templates/` control the visual design:
 
 ### Adjusting Content Strategy
 
-The agent's content selection strategy and quality standards are defined in the "The resume" section of `.claude/agents/ats-resume-writer.md`. You can modify these to match your preferences. For example, changing the recency bias from 5-7 years to 10 years, or adjusting the page limit. If you plan to contribute the change, copy the file to `agents/` too; the plugin loads that copy, and CI checks the two match.
+The agent's content selection strategy and quality standards are defined in the "The resume" section of `.claude/agents/ats-resume-writer.md`. You can modify these to match your preferences. For example, changing the recency window from 5-7 years to 10 years (it is measured from the end of the most recent role), or adjusting the page limit. If you plan to contribute the change, copy the file to `agents/` too; the plugin loads that copy, and CI checks the two match.
 
 ### Cover Letter Tone
 
@@ -442,7 +528,7 @@ On 2026-09-27, each model got the resume writer's instructions plus the example 
 
 With the original prompt, Haiku added Kafka, which appears only in the job description's tech stack, in 2 of 4 runs, and wrote `34%` instead of `34\%` (which silently cuts the rest of the line out of the PDF) in 2 of 4. The rewrite states that the job description never supplies content, puts a check on the skills table (where the padding happened), and requires escaping LaTeX special characters. Two further Haiku runs with the validator step turned on also passed, after fixing what it flagged.
 
-"Original prompt" is v1.1.0 plus this release's plugin paths and validator steps, which these runs skipped. "Rewritten prompt" covers the rewrite and one round of small review edits (summary length, tense, certification form). These are small samples, so treat them as a smoke test rather than a benchmark. Sonnet stays the default: Opus did no better on these checks and costs more. Either way, keep the validator step on.
+"Original prompt" is v1.1.0 plus this release's plugin paths and validator steps, which these runs skipped. "Rewritten prompt" covers the rewrite and one round of small review edits (summary length, tense, certification form). The v1.3.0 additions that came later (the recency rule, career breaks, general resumes, candidate folders, and the location and compile instructions) were not part of these runs. These are small samples, so treat them as a smoke test rather than a benchmark. Sonnet stays the default: Opus did no better on these checks and costs more. Either way, keep the validator step on.
 
 If you find the agents occasionally deviating from instructions (adding unsolicited content, ignoring agent notes), start a fresh session to avoid context pollution from previous conversations. Running plain `claude` always starts a new session (only `--continue` or `--resume` pick up an old one), and `/clear` wipes the context inside a session that is already open.
 
