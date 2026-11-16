@@ -744,7 +744,12 @@ describe("career breaks", () => {
     // never a source; outside comments it must not mention a break, or this
     // proves nothing.
     expect(mcd).toContain("### Career Break -- Full-time study");
-    const visible = mcd.replace(/<!--[\s\S]*?-->/g, "").toLowerCase();
+    // Text outside every <!-- ... --> block (an unclosed comment hides the rest).
+    const visible = mcd
+      .split("<!--")
+      .map((part, i) => (i === 0 ? part : part.includes("-->") ? part.slice(part.indexOf("-->") + 3) : ""))
+      .join("")
+      .toLowerCase();
     expect(visible).not.toContain("career break");
     expect(visible).not.toContain("full-time study");
     expect(validate(tex, mcd).findings.map((f) => [f.kind, f.token])).toEqual([
