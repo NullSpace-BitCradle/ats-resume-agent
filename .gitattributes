@@ -3,3 +3,8 @@
 * text=auto eol=lf
 *.pdf binary
 *.png binary
+*.jpg binary
+*.docx binary
+*.doc binary
+*.pages binary
+*.odt binary
