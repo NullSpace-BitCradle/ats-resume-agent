@@ -22,7 +22,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - name: Validator tests
+        with:
+          # Pinned so a new Bun release cannot change test results under us.
+          bun-version: 1.4.4
+      - name: Validator, export, and ingest tests
         run: bun test tools/
       - name: Example resume traces to the example MCD
         run: bun tools/validate.ts examples/sample-output/Resume-Alex_Morgan-Example_Corp-Senior_Engineer.tex examples/Master_Career_Document.md
@@ -37,6 +40,16 @@ jobs:
           bun tools/export-text.ts examples/sample-output/CoverLetter-Alex_Morgan-Example_Corp-Senior_Engineer.tex example-cover.txt
           if grep -n '[\\{}~]' example-cover.txt; then echo 'LaTeX left in the export'; exit 1; fi
           bun tools/validate.ts example-cover.txt examples/Master_Career_Document.md examples/Job_Description-Example_Corp-Senior_Engineer.md
+
+  version:
+    name: Plugin version moves when shipped files change
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: A change to agents/, tools/, or templates/ since the last tag needs a new plugin.json version
+        run: bash .github/scripts/version-bump.sh
 
   latex:
     name: Compile LaTeX
@@ -63,6 +76,10 @@ jobs:
             test -s "build/$name.pdf"
             echo "::endgroup::"
           done
+      - name: Header separators reach the PDF text layer as |, not as em dashes
+        run: |
+          pdftotext -enc UTF-8 -l 1 build/Resume-Alex_Morgan-Example_Corp-Senior_Engineer.pdf - | tee resume-text.txt | head -5
+          grep -q 'Austin, TX |' resume-text.txt
       - name: Render page one of each PDF to PNG
         run: |
           for pdf in build/*.pdf; do
@@ -87,6 +104,12 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Plugin agents match the project agents clone users load
         run: diff -r agents .claude/agents || { echo "agents/ and .claude/agents/ must be identical. Edit both, or copy one over the other."; exit 1; }
+      # Not --strict: it turns warnings into errors, and the root CLAUDE.md,
+      # which clone users need, always draws the warning that a plugin does not
+      # load CLAUDE.md as context. The plugin directory checks also note there
+      # is no icon. That check does not change the result, and the first icon
+      # submitted becomes the listing icon for good, so it is left to the
+      # maintainer instead of being generated here.
       - name: Validate plugin and marketplace manifests
         run: |
           claude --version
