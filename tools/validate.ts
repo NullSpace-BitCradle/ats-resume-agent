@@ -7,7 +7,7 @@
 // Extra sources (the job description) are for cover letters only.
 
 import { readFileSync } from "node:fs";
-import { findCommands, stripComments, stripLatex } from "./latex";
+import { findCommands, normalizeEol, stripComments, stripLatex } from "./latex";
 
 export { stripLatex } from "./latex";
 
@@ -385,8 +385,10 @@ const SKILLS_NAME = /skill|competenc|proficienc|technolog|tools|stack|expertise/
 const CERTS_NAME = /certif|licens|credential/i;
 
 export function validate(resume: string, mcd: string, options: Options = {}): Result {
+  resume = normalizeEol(resume);
+  mcd = normalizeEol(mcd);
   const format = options.format ?? "tex";
-  const extra = options.extraSources ?? [];
+  const extra = (options.extraSources ?? []).map(normalizeEol);
   const resumeShaped = format === "tex" && /\\heading(?:Bf|It)?\s*\{|\\begin\{tabularx\}/.test(resume);
   if (extra.length && resumeShaped) {
     throw new Error(

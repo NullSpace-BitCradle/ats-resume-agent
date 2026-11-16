@@ -6,7 +6,7 @@
 // Usage: bun tools/export-text.ts <file.tex> [out.txt]
 
 import { readFileSync, writeFileSync } from "node:fs";
-import { group, stripLatex } from "./latex";
+import { group, normalizeEol, stripLatex } from "./latex";
 
 // \documentTitle{Name}{contacts} spans lines, so it is rewritten before the
 // line pass: the name, then each \href display text joined with " | ".
@@ -32,6 +32,7 @@ function heading(line: string, command: string): string | null {
 }
 
 export function exportText(tex: string): string {
+  tex = normalizeEol(tex);
   const b = tex.indexOf("\\begin{document}");
   const e = tex.lastIndexOf("\\end{document}");
   let body = tex.slice(b >= 0 ? b + "\\begin{document}".length : 0, e >= 0 ? e : tex.length);

@@ -9,8 +9,16 @@ permissions:
 
 jobs:
   validate:
-    name: Validator tests and example check
-    runs-on: ubuntu-latest
+    name: Validator tests and example check (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows catches line-ending bugs (CRLF hid MCD headings from the validator).
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2

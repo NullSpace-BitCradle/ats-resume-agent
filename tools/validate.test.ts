@@ -4,11 +4,13 @@ import { join } from "node:path";
 import { validate } from "./validate";
 
 const root = join(import.meta.dir, "..");
-const mcd = readFileSync(join(root, "examples/Master_Career_Document.md"), "utf8");
+// Fixtures as LF, whatever the checkout did to them; the CRLF tests below convert on purpose.
+const toLf = (s: string) => s.replace(/\r\n?/g, "\n");
+const mcd = toLf(readFileSync(join(root, "examples/Master_Career_Document.md"), "utf8"));
 const resumePath = join(root, "examples/sample-output/Resume-Alex_Morgan-Example_Corp-Senior_Engineer.tex");
-const resume = readFileSync(resumePath, "utf8");
-const cover = readFileSync(join(root, "examples/sample-output/CoverLetter-Alex_Morgan-Example_Corp-Senior_Engineer.tex"), "utf8");
-const jd = readFileSync(join(root, "examples/Job_Description-Example_Corp-Senior_Engineer.md"), "utf8");
+const resume = toLf(readFileSync(resumePath, "utf8"));
+const cover = toLf(readFileSync(join(root, "examples/sample-output/CoverLetter-Alex_Morgan-Example_Corp-Senior_Engineer.tex"), "utf8"));
+const jd = toLf(readFileSync(join(root, "examples/Job_Description-Example_Corp-Senior_Engineer.md"), "utf8"));
 
 // Swap one exact string in the example resume, failing the test if it is not there.
 function plant(from: string, to: string): string {
@@ -611,5 +613,30 @@ describe("CLI", () => {
     const jd = join(root, "examples/Job_Description-Example_Corp-Senior_Engineer.md");
     expect(Bun.spawnSync(["bun", cli, cover, mcdPath]).exitCode).toBe(1);
     expect(Bun.spawnSync(["bun", cli, cover, mcdPath, jd]).exitCode).toBe(0);
+  });
+});
+
+// Files saved on Windows (or checked out with core.autocrlf=true) end lines in
+// \r\n. Every check must behave exactly as it does on \n input.
+describe("Windows line endings", () => {
+  const crlf = (s: string) => s.replace(/\r?\n/g, "\r\n");
+  const lf = (s: string) => s.replace(/\r\n?/g, "\n");
+
+  test("a Legacy-only skill still fails when the MCD has CRLF line endings", () => {
+    const planted = plant("Python, TypeScript", "Python, jQuery, TypeScript");
+    expect(tokens(planted, "skill", lf(mcd))).toEqual(["jQuery"]);
+    expect(tokens(planted, "skill", crlf(mcd))).toEqual(["jQuery"]);
+    expect(tokens(crlf(planted), "skill", crlf(mcd))).toEqual(["jQuery"]);
+  });
+
+  test("a % comment in a CRLF resume is still stripped", () => {
+    const hidden = plant("React, Next.js \\\\", "React, Next.js \\\\ % Kafka");
+    expect(tokens(hidden, "skill")).toEqual([]);
+    expect(tokens(crlf(hidden), "skill", crlf(mcd))).toEqual([]);
+  });
+
+  test("findings and counts are identical for LF and CRLF input", () => {
+    const planted = plant("MongoDB, Datadog", "MongoDB, Kafka, Datadog");
+    expect(validate(crlf(planted), crlf(mcd))).toEqual(validate(lf(planted), lf(mcd)));
   });
 });

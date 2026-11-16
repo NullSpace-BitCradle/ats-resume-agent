@@ -1,5 +1,11 @@
 // Shared LaTeX parsing helpers.
 
+// Windows line endings (\r\n, or a lone \r) as \n. Every parser here splits on
+// \n and anchors on $, so a stray \r hides headings and comments from them.
+export function normalizeEol(s: string): string {
+  return s.replace(/\r\n?/g, "\n");
+}
+
 // Contents of the brace group that opens at s[open], and the index after it.
 export function group(s: string, open: number): [string, number] {
   let depth = 0;
@@ -39,7 +45,7 @@ export function findCommands(s: string, command: string, arity: number): { at: n
 
 // Drop % comments (not \%) line by line, keeping line breaks so offsets still map to lines.
 export function stripComments(tex: string): string {
-  return tex
+  return normalizeEol(tex)
     .split("\n")
     .map((l) => l.replace(/(?<!\\)%.*$/, ""))
     .join("\n");

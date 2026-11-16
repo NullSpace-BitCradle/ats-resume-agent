@@ -5,9 +5,11 @@ import { exportText } from "./export-text";
 import { validate } from "./validate";
 
 const root = join(import.meta.dir, "..");
-const resume = readFileSync(join(root, "examples/sample-output/Resume-Alex_Morgan-Example_Corp-Senior_Engineer.tex"), "utf8");
-const mcd = readFileSync(join(root, "examples/Master_Career_Document.md"), "utf8");
-const coverTemplate = readFileSync(join(root, "templates/cover-letter-template.tex"), "utf8");
+// Fixtures as LF, whatever the checkout did to them; the CRLF tests below convert on purpose.
+const toLf = (s: string) => s.replace(/\r\n?/g, "\n");
+const resume = toLf(readFileSync(join(root, "examples/sample-output/Resume-Alex_Morgan-Example_Corp-Senior_Engineer.tex"), "utf8"));
+const mcd = toLf(readFileSync(join(root, "examples/Master_Career_Document.md"), "utf8"));
+const coverTemplate = toLf(readFileSync(join(root, "templates/cover-letter-template.tex"), "utf8"));
 
 describe("resume export", () => {
   const text = exportText(resume);
@@ -56,8 +58,8 @@ describe("resume export", () => {
 
 describe("cover letter export", () => {
   test("the example cover letter exports with its date as a paragraph and still validates", () => {
-    const cover = readFileSync(join(root, "examples/sample-output/CoverLetter-Alex_Morgan-Example_Corp-Senior_Engineer.tex"), "utf8");
-    const jd = readFileSync(join(root, "examples/Job_Description-Example_Corp-Senior_Engineer.md"), "utf8");
+    const cover = toLf(readFileSync(join(root, "examples/sample-output/CoverLetter-Alex_Morgan-Example_Corp-Senior_Engineer.tex"), "utf8"));
+    const jd = toLf(readFileSync(join(root, "examples/Job_Description-Example_Corp-Senior_Engineer.md"), "utf8"));
     const text = exportText(cover);
     expect(text).toContain("\n\nMarch 10, 2026\n\n");
     expect(text).toContain("\n\nDear Hiring Manager,");
@@ -88,5 +90,12 @@ describe("CLI", () => {
 
   test("exits 2 on bad usage", () => {
     expect(Bun.spawnSync(["bun", join(import.meta.dir, "export-text.ts")]).exitCode).toBe(2);
+  });
+});
+
+describe("Windows line endings", () => {
+  test("CRLF input exports the same text as LF input", () => {
+    const lf = resume.replace(/\r\n?/g, "\n");
+    expect(exportText(lf.replace(/\n/g, "\r\n"))).toBe(exportText(lf));
   });
 });
