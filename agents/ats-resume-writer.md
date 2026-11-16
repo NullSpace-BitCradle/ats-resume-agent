@@ -81,6 +81,7 @@ Save as `output/CoverLetter-[Name]-[Company]-[Role].tex`.
 - **Use only the template's commands**, and no new macros. The template's ATS support (`\pdfgentounicode`, `glyphtounicode`) already makes the PDF machine-readable, so generic ATS advice (plain fonts, .docx) does not apply.
 - **Escape LaTeX special characters in text:** `\%`, `\$`, `\&`, `\#`, `\_`. A bare `%` starts a comment, so everything after it on the line silently disappears from the PDF while `pdflatex` still reports success.
 - **Every skills table row ends with `\\`**, the last row included, and has exactly one unescaped `&`, between the category and its skills. A lost `\\` stops the compile with "Extra alignment tab has been changed to \cr" or runs two rows together; check every row ending before compiling.
+- **Write the `.tex` with your file-writing tool (Write or Edit), never a shell heredoc, `echo`, or `printf`.** Shells eat backslashes: in test runs a heredoc turned every `\\` into `\` and the compile failed.
 - **The header** starts with the location from the MCD's contact information (city and state or region; never a street address unless the MCD's notes ask for one), then the contact links the MCD lists. Leave out any item the MCD doesn't have.
 - **Keep the forms the validator reads.** It parses these exact structures. Content written another way is either skipped by its checks or fails its coverage check, so a claim in the wrong form goes unverified:
 

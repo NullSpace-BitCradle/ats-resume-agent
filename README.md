@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/NullSpace-BitCradle/ats-resume-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/NullSpace-BitCradle/ats-resume-agent/actions/workflows/ci.yml)
 
-> v1.3.1. Prefer the original? It is preserved as the [v1.1.0 release](https://github.com/NullSpace-BitCradle/ats-resume-agent/releases/tag/v1.1.0) and the [`v1` branch](https://github.com/NullSpace-BitCradle/ats-resume-agent/tree/v1). See [CHANGELOG.md](CHANGELOG.md) for what changed.
+> v1.3.2. Prefer the original? It is preserved as the [v1.1.0 release](https://github.com/NullSpace-BitCradle/ats-resume-agent/releases/tag/v1.1.0) and the [`v1` branch](https://github.com/NullSpace-BitCradle/ats-resume-agent/tree/v1). See [CHANGELOG.md](CHANGELOG.md) for what changed.
 
 An AI-powered resume and cover letter generator built on [Claude Code](https://code.claude.com/docs). It creates ATS-optimized, LaTeX-formatted resumes tailored to specific job descriptions. It also includes a guided career document builder that helps you create the source material through an interactive interview.
 
