@@ -1,13 +1,7 @@
-# Output files
-output/*.pdf
-output/*.tex
-output/*.txt
-output/*.aux
-output/*.log
-output/*.out
-output/*.toc
-output/*.fls
-output/*.fdb_latexmk
+# Output files: everything under output/, subfolders included (backups
+# there hold real candidate data). Only the placeholder is tracked.
+output/**
+!output/.gitkeep
 
 # LaTeX auxiliary files
 *.aux

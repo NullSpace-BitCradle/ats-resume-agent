@@ -64,6 +64,14 @@ jobs:
           fetch-depth: 0
       - name: A change to agents/, tools/, or templates/ since the last tag needs a new plugin.json version
         run: bash .github/scripts/version-bump.sh
+      - name: No real candidate data is committed (output/, candidates/, inputs/, root MCD or job descriptions)
+        run: |
+          found=$(git ls-files -- output candidates inputs Master_Career_Document.md 'Job_Description-*.md' | grep -vx 'output/.gitkeep' || true)
+          if [ -n "$found" ]; then
+            echo "These paths hold real candidates' files and must never be committed:"
+            echo "$found"
+            exit 1
+          fi
 
   latex:
     name: Compile LaTeX
