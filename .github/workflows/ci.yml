@@ -8,7 +8,21 @@ permissions:
   contents: read
 
 jobs:
+  # Branch protection requires a check with this exact name. The matrix legs
+  # report as "... (ubuntu-latest)" etc., so this job carries the required
+  # name and fails unless every leg passed (a skipped job would count as passing).
   validate:
+    name: Validator tests and example check
+    needs: validate-os
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every OS leg passed
+        run: |
+          echo "validate-os result: ${{ needs.validate-os.result }}"
+          test "${{ needs.validate-os.result }}" = success
+
+  validate-os:
     name: Validator tests and example check (${{ matrix.os }})
     strategy:
       fail-fast: false
