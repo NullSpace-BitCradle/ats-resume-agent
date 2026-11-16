@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.3.1: Word on Windows, and fixes from real agent runs
+
+- New: on Windows, the ingest tool reads `.doc` files through an installed copy of Word (opened hidden and read-only) when LibreOffice and antiword are missing. A UTF-8 byte order mark from any converter is dropped
+- Fixed: in compile mode, the career-doc-builder dropped a gap's reason and the candidate's target roles even when the candidate had written them in their own documents. What the candidate wrote now counts as their word: the break is recorded in their wording (leaving out health details and other people's), the target roles go under Professional Identity & Positioning, and both are listed for confirmation
+- Compile mode now says which sections to leave out, that Key Achievements lists every number however few, that an employer's name is not an industry, and the order of the title, open questions, and status line
+- Resume writer: the education heading carries the graduation date, a Projects section is allowed when the MCD has fitting projects, certifications keep the MCD's form, months follow the MCD, a short summary is never padded, and a page that runs over loses the least relevant bullets first
+- README: the pandoc entry for `.doc` was wrong (pandoc cannot read `.doc`) and is gone; the model comparison notes the 2026-11-16 runs of the v1.3.0 agents
+
 ## v1.3.0: Rewritten resume writer, careers outside tech, Windows
 
 Changes from a review of how the agents serve candidates outside tech, with older careers, career breaks, and old resumes in office formats:

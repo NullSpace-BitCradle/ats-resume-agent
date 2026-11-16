@@ -62,9 +62,9 @@ Standards:
 
 - Reverse chronological order, unless the MCD's "Notes for Resume Customization" recommends otherwise for this role type.
 - Every bullet starts with a strong action verb (never "Responsible for") and is achievement-focused. Use past tense for completed achievements, including ones in the current role, and present tense only for ongoing duties. No personal pronouns.
-- The summary is 3 to 4 sentences, built from the MCD's own summaries (combine sentences from them when the best-fitting version is shorter). Its claims (clearance, certifications, metrics) must be traceable to the MCD without paraphrase that inflates them. The validator checks values, not sentences, so this one is on you.
+- The summary is 3 to 4 sentences, built from the MCD's own summaries (combine sentences from them when the best-fitting version is shorter). When the MCD has less than that, write fewer sentences or split its own; never add words to reach a length. Its claims (clearance, certifications, metrics) must be traceable to the MCD without paraphrase that inflates them. The validator checks values, not sentences, so this one is on you.
 - When the MCD says a course was completed but the certification was not earned ("exam not pursued"), write "coursework in" or "exam preparation for". Never list the certification name as if it were earned.
-- One page, or two only when 10+ years of experience make it unavoidable.
+- One page, or two only when 10+ years of experience make it unavoidable. When it runs over, cut the bullets least relevant to the target first, then the oldest roles (never one between two kept roles).
 - Standard section names (Summary, Skills, Experience, Education), and both an acronym and its spelled-out form where the MCD supports it.
 
 Save as `output/Resume-[Name]-[Company]-[Role].tex`, or `output/Resume-[Name]-General.tex` without a job description, where `[Name]` is the candidate's name from the MCD with underscores for spaces.
@@ -80,7 +80,7 @@ Save as `output/CoverLetter-[Name]-[Company]-[Role].tex`.
 - **Copy the template's preamble verbatim.** Everything from `\documentclass` to `\begin{document}` stays exactly as the template has it: do not swap `fullpage` for `geometry`, remove fonts, or change `\addtolength` values. You write only the body.
 - **Use only the template's commands**, and no new macros. The template's ATS support (`\pdfgentounicode`, `glyphtounicode`) already makes the PDF machine-readable, so generic ATS advice (plain fonts, .docx) does not apply.
 - **Escape LaTeX special characters in text:** `\%`, `\$`, `\&`, `\#`, `\_`. A bare `%` starts a comment, so everything after it on the line silently disappears from the PDF while `pdflatex` still reports success.
-- **Every skills table row ends with `\\`**, the last row included, and has exactly one unescaped `&`, between the category and its skills. A lost `\\` runs two rows together.
+- **Every skills table row ends with `\\`**, the last row included, and has exactly one unescaped `&`, between the category and its skills. A lost `\\` stops the compile with "Extra alignment tab has been changed to \cr" or runs two rows together; check every row ending before compiling.
 - **The header** starts with the location from the MCD's contact information (city and state or region; never a street address unless the MCD's notes ask for one), then the contact links the MCD lists. Leave out any item the MCD doesn't have.
 - **Keep the forms the validator reads.** It parses these exact structures. Content written another way is either skipped by its checks or fails its coverage check, so a claim in the wrong form goes unverified:
 
@@ -100,7 +100,7 @@ Category Name & Skill4, Skill5 \\
 \end{tabularx}
 
 \section{Experience}
-\headingBf{Company Name}{Month Year -- Month Year}
+\headingBf{Company Name}{Month Year -- Month Year}   % months as the MCD writes them (Mar or March)
 \headingIt{Job Title}{}
 \begin{resume_list}
   \itemTitle{Client: Client Name}   % consulting and contract roles only
@@ -110,12 +110,18 @@ Category Name & Skill4, Skill5 \\
 \headingBf{Career Break}{Month Year -- Month Year}   % only when the MCD records one
 \headingIt{Reason, in the MCD's words}{}
 
+\section{Projects}   % optional: only when the MCD has project highlights that fit the role
+\headingBf{Project Name}{Month Year -- Present}
+\begin{resume_list}
+  \item What it is and what it did, in the MCD's words
+\end{resume_list}
+
 \section{Education}
 \headingBf{Institution Name}{}
-\headingIt{Degree, Major}{}
+\headingIt{Degree, Major}{Graduation date, as the MCD gives it}
 \headingBf{Certifications}{}
 \begin{resume_list}
-  \item Certification Name -- Issuing Body
+  \item Certification Name -- Issuing Body   % as the MCD gives it; no issuer when it names none
 \end{resume_list}
 ```
 
