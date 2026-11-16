@@ -79,13 +79,26 @@ function isLegacyHeading(title: string): boolean {
   return /\b(historical|platforms?|skills?|systems?|frameworks?|languages?|tech|technolog(?:y|ies)|tools?|stack)$/i.test(t);
 }
 
+// Sections that say what the candidate wants, or tell the resume agent what to
+// do, rather than what happened: positioning and target titles, work
+// preferences, and the notes for resume customization. A target title is not a
+// title the candidate held, and "Role cutoff: 15 years" is not 15 years of
+// experience.
+function isGuidanceHeading(title: string): boolean {
+  const t = title.replace(/[*_`]/g, "").replace(/^[^A-Za-z]+/, "").trim();
+  return /^(?:notes?\s+(?:for|on)\s+resume\s+customi[sz]ation|resume\s+customi[sz]ation|customi[sz]ation\s+notes|professional\s+identity|positioning|work\s+preferences|(?:target|desired|primary)\s+(?:job\s+)?(?:titles?|roles?))\b/i.test(
+    t,
+  );
+}
+
 // The MCD minus what must never count as evidence: HTML comments, Agent Note
-// instructions (a note saying "never list CISSP" is not a CISSP), and the
-// Legacy section at any heading level. Ordered-list markers go too: a table of
-// contents numbered 1 to 18 would otherwise back every small number in the
-// resume, and in-page links (the table of contents) are dropped, so section
-// names never become acronym sources.
-function sourceText(mcd: string): string {
+// instructions (a note saying "never list CISSP" is not a CISSP), the Legacy
+// section and the guidance sections at any heading level. Ordered-list markers
+// go too: a table of contents numbered 1 to 18 would otherwise back every small
+// number in the resume, and in-page links (the table of contents) are dropped,
+// so section names never become acronym sources. `guidance` is false for extra
+// sources (a job description), whose headings mean something else.
+function sourceText(mcd: string, guidance = true): string {
   const kept: string[] = [];
   let skipLevel = 0;
   let inNote: "" | "quote" | "bullet" = "";
@@ -93,7 +106,7 @@ function sourceText(mcd: string): string {
   for (const line of mcd.replace(/<!--[\s\S]*?-->/g, " ").split("\n")) {
     const h = line.match(/^(#{1,6})\s+(.*)$/);
     if (h && skipLevel && h[1].length <= skipLevel) skipLevel = 0;
-    if (h && isLegacyHeading(h[2])) skipLevel = h[1].length;
+    if (h && !skipLevel && (isLegacyHeading(h[2]) || (guidance && isGuidanceHeading(h[2])))) skipLevel = h[1].length;
     if (skipLevel) continue;
     // A note is a quoted block or a bullet. A quoted note runs on through ">"
     // lines and any lazy continuation up to a blank line; a bulleted one through
@@ -323,6 +336,29 @@ function splitSkills(cell: string): string[] {
     .filter(Boolean);
 }
 
+interface TableRow {
+  text: string;
+  from: number;
+}
+
+// The rows inside one \\-delimited chunk of a table. Normally that is one row,
+// possibly wrapped across lines. When a \\ was lost, a second line that opens
+// its own cells (an unescaped &, or a \multicolumn) starts a second row, so the
+// merge can be reported and each row still checked on its own.
+const OPENS_CELLS = /(?<!\\)&|\\multicolumn(?![A-Za-z])/;
+function tableRows(chunk: string): TableRow[] {
+  const rows: TableRow[] = [];
+  let from = 0;
+  for (const line of chunk.split("\n")) {
+    const current = rows[rows.length - 1];
+    const startsRow = !current || (stripLatex(current.text) && OPENS_CELLS.test(line) && OPENS_CELLS.test(current.text));
+    if (startsRow) rows.push({ text: line, from });
+    else current.text += `\n${line}`;
+    from += line.length + 1;
+  }
+  return rows;
+}
+
 // ---------------------------------------------------------------- context
 
 const STOPWORDS = new Set(
@@ -397,7 +433,7 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
   }
 
   const cleaned = sourceText(mcd);
-  const extraCleaned = extra.map(sourceText).join("\n");
+  const extraCleaned = extra.map((s) => sourceText(s, false)).join("\n");
   const all = `${cleaned}\n${extraCleaned}`;
   // A heading's parts must come from one MCD section; a certification's name,
   // issuer, and year from one bullet entry, so adjacent certs can't swap years.
@@ -569,23 +605,39 @@ export function validate(resume: string, mcd: string, options: Options = {}): Re
     let offset = m.index + (spec ? spec.end : "\\begin{tabularx}".length);
     // Rows end at \\ or \\[2pt]. A row with no & and no comma is a header or a
     // rule line, not a list of skills.
-    for (const part of body.slice(offset, tableEnd).split(/(\\\\(?:\[[^\]]*\])?)/)) {
+    const parts = body.slice(offset, tableEnd).split(/(\\\\(?:\[[^\]]*\])?)/);
+    parts.forEach((part, k) => {
       if (/^\\\\/.test(part)) {
         offset += part.length;
-        continue;
+        return;
       }
-      const cells = part.split(/(?<!\\)&/);
-      const lead = part.length - part.trimStart().length;
-      const cell =
-        cells.length > 1
-          ? cells.slice(1).join(" ")
-          : part.replace(/\\multicolumn\s*\{[^}]*\}\s*\{[^}]*\}/g, "").replace(/^\s*\{?\s*[^,:{}]{1,40}:\s*/, "");
-      const text = stripLatex(cell).replace(/\s+/g, " ");
-      // A comma-free row with no & is a header ("Core Skills") only when it
-      // reads like a skills section name; otherwise its text is a skill.
-      if (text && (cells.length > 1 || !SKILLS_NAME.test(text))) checkSkills(text, at(offset + lead));
+      const rows = tableRows(part);
+      const lineOfRow = (r: TableRow) => at(offset + r.from + (r.text.length - r.text.trimStart().length));
+      // Structure first: a lost \\ merges two rows, and the skills findings
+      // that follow would otherwise be misleading merged tokens.
+      rows.slice(0, -1).forEach((r) =>
+        flag("latex", "skills row is missing its \\\\ terminator, so the next row ran into it", lineOfRow(r)),
+      );
+      for (const r of rows) {
+        const amps = r.text.split(/(?<!\\)&/).length - 1;
+        if (amps > 1) flag("latex", `skills row has ${amps} unescaped & (one separates label from skills; write \\& in text)`, lineOfRow(r));
+      }
+      const last = rows[rows.length - 1];
+      if (k === parts.length - 1 && last && stripLatex(last.text)) flag("latex", "last skills row is missing its \\\\ terminator", lineOfRow(last));
+
+      for (const r of rows) {
+        const cells = r.text.split(/(?<!\\)&/);
+        const cell =
+          cells.length > 1
+            ? cells.slice(1).join(" ")
+            : r.text.replace(/\\multicolumn\s*\{[^}]*\}\s*\{[^}]*\}/g, "").replace(/^\s*\{?\s*[^,:{}]{1,40}:\s*/, "");
+        const text = stripLatex(cell).replace(/\s+/g, " ");
+        // A comma-free row with no & is a header ("Core Skills") only when it
+        // reads like a skills section name; otherwise its text is a skill.
+        if (text && (cells.length > 1 || !SKILLS_NAME.test(text))) checkSkills(text, lineOfRow(r));
+      }
       offset += part.length;
-    }
+    });
     blank(m.index, tableEnd);
   }
 

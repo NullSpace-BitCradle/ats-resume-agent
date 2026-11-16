@@ -122,6 +122,21 @@ Technical Mentorship, Code Review, Sprint Planning, Cross-Team Coordination, Tec
 <!-- PURPOSE: Canonical source for all role details. Responsibilities, accomplishments, metrics, and context live here in full detail. -->
 ## Work Experience
 
+<!-- TIME AWAY FROM WORK: Alex has no gap, so this example has no such entry.
+A gap of more than 6 months can be recorded as its own entry, in its place in
+the timeline, and the resume writer then shows it as its own entry too. The
+reason is in the candidate's own words; health details are optional. Format:
+
+### Career Break -- Full-time study
+**June 2014 -- December 2015**
+
+- Completed an evening Spanish course (only if there was such activity)
+
+> **Agent Note:** Show this as its own entry; keep the reason as written.
+
+This lives in an HTML comment so the example's facts stay unchanged: the
+validator ignores HTML comments, so nothing here backs a resume claim. -->
+
 ### Stellar Technologies -- Senior Software Engineer
 **March 2022 -- Present** | Austin, TX (Remote)
 

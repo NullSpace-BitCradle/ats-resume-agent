@@ -20,9 +20,30 @@ describe("resume export", () => {
     expect(text).not.toMatch(/\[t\]|textwidth|tabularx|hspace/);
   });
 
-  test("keeps the name first and the contact line after it", () => {
+  test("keeps the name first and the contact line after it, location included", () => {
     expect(lines[0]).toBe("Alex Morgan");
-    expect(lines[1]).toBe("(555) 867-5309 | alex.morgan@example.com | linkedin.com/in/alex-morgan-example | github.com/alexmorgan-example");
+    expect(lines[1]).toBe(
+      "Austin, TX | (555) 867-5309 | alex.morgan@example.com | linkedin.com/in/alex-morgan-example | github.com/alexmorgan-example",
+    );
+  });
+
+  test("plain-text contact items survive anywhere in the header, with any icon form", () => {
+    const title = resume.slice(resume.indexOf("\\documentTitle{Alex"), resume.indexOf("\\tinysection{Summary}"));
+    expect(title).toContain("\\faMapMarker~Austin, TX ~ | ~");
+    const noLocation = resume.replace("\\raisebox{-0.15\\height} \\faMapMarker~Austin, TX ~ | ~\n", "");
+    expect(noLocation).not.toBe(resume);
+    expect(exportText(noLocation).split("\n")[1]).toStartWith("(555) 867-5309 | ");
+    const last = noLocation.replace("github.com/alexmorgan-example}\n", "github.com/alexmorgan-example} ~ | ~\n    \\faMapMarker*\\ Austin, TX\n");
+    expect(last).not.toBe(noLocation);
+    expect(exportText(last).split("\n")[1]).toEndWith(" | github.com/alexmorgan-example | Austin, TX");
+  });
+
+  test("the resume template's header exports every slot, location first", () => {
+    const template = toLf(readFileSync(join(root, "templates/resume-template.tex"), "utf8"));
+    expect(exportText(template).split("\n").slice(0, 2)).toEqual([
+      "Your Name",
+      "City, State | 123-456-7890 | you@example.com | linkedin.com/in/yourprofile | github.com/yourusername",
+    ]);
   });
 
   test("uses standard section headings an ATS can find", () => {
@@ -90,6 +111,19 @@ describe("CLI", () => {
 
   test("exits 2 on bad usage", () => {
     expect(Bun.spawnSync(["bun", join(import.meta.dir, "export-text.ts")]).exitCode).toBe(2);
+  });
+});
+
+describe("resume template", () => {
+  const template = toLf(readFileSync(join(root, "templates/resume-template.tex"), "utf8"));
+  const preamble = (tex: string) => tex.slice(tex.indexOf("\\documentclass"), tex.indexOf("\\begin{document}"));
+
+  test("uses T1 font encoding, so | separators reach the PDF text as |, not as em dashes", () => {
+    expect(preamble(template)).toContain("\\usepackage[T1]{fontenc}");
+  });
+
+  test("the example resume carries the template's preamble verbatim, as the writer must", () => {
+    expect(preamble(resume)).toBe(preamble(template));
   });
 });
 

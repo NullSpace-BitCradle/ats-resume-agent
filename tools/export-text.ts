@@ -9,17 +9,18 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { group, normalizeEol, stripLatex } from "./latex";
 
 // \documentTitle{Name}{contacts} spans lines, so it is rewritten before the
-// line pass: the name, then each \href display text joined with " | ".
+// line pass: the name, then every contact item as it reads on the page (link
+// display text and plain text such as a location alike), joined with " | ".
 function expandTitle(body: string): string {
   const at = body.indexOf("\\documentTitle{");
   if (at < 0) return body;
   const [name, afterName] = group(body, at + "\\documentTitle".length);
   const [contacts, end] = group(body, afterName);
-  const shown: string[] = [];
-  for (let i = contacts.indexOf("\\href{"); i >= 0; i = contacts.indexOf("\\href{", i + 1)) {
-    const [, afterUrl] = group(contacts, i + "\\href".length);
-    shown.push(stripLatex(group(contacts, afterUrl)[0].replace(/\n/g, " ")));
-  }
+  // stripLatex drops each \href's URL group and keeps its display text.
+  const shown = stripLatex(contacts.replace(/\n/g, " "))
+    .split(/\s*\|\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean);
   return `${body.slice(0, at)}${stripLatex(name)}\n${shown.join(" | ")}\n${body.slice(end)}`;
 }
 

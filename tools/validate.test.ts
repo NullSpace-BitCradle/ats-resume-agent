@@ -640,3 +640,123 @@ describe("Windows line endings", () => {
     expect(validate(crlf(planted), crlf(mcd))).toEqual(validate(lf(planted), lf(mcd)));
   });
 });
+
+describe("skills table structure", () => {
+  const latex = (tex: string) => validate(tex, mcd).findings.filter((f) => f.kind === "latex");
+  const MISSING = "skills row is missing its \\\\ terminator, so the next row ran into it";
+  const table = "\\begin{tabularx}{\\textwidth}{>{\\bfseries}l@{\\hspace{12pt}} X}\n";
+
+  test("a row that lost its \\\\ is reported as structure, not as merged skill tokens", () => {
+    const tex = plant("MongoDB, Datadog, Grafana, Prometheus \\\\", "MongoDB, Datadog, Grafana, Prometheus");
+    const findings = validate(tex, mcd).findings;
+    expect(findings.map((f) => [f.kind, f.token])).toEqual([["latex", MISSING]]);
+    expect(findings[0].context).toStartWith("Data \\& Observability &");
+  });
+
+  test("a lost \\\\ still lets a fabricated skill in the next row be caught on its own", () => {
+    const tex = plant("MongoDB, Datadog, Grafana, Prometheus \\\\", "MongoDB, Datadog, Grafana, Prometheus").replace(
+      "Microservices, Event-Driven",
+      "Kafka, Microservices, Event-Driven",
+    );
+    expect(validate(tex, mcd).findings.map((f) => [f.kind, f.token])).toEqual([
+      ["latex", MISSING],
+      ["skill", "Kafka"],
+    ]);
+  });
+
+  test("the last row without \\\\ is reported", () => {
+    const tex = plant("Agile/Scrum, Incident Response \\\\", "Agile/Scrum, Incident Response");
+    expect(latex(tex).map((f) => f.token)).toEqual(["last skills row is missing its \\\\ terminator"]);
+    expect(tokens(tex, "skill")).toEqual([]);
+  });
+
+  test("an unescaped & in a row label is reported", () => {
+    expect(latex(plant("Data \\& Observability &", "Data & Observability &")).map((f) => f.token)).toEqual([
+      "skills row has 2 unescaped & (one separates label from skills; write \\& in text)",
+    ]);
+  });
+
+  test("a \\multicolumn header that lost its \\\\ is reported", () => {
+    const tex = plant(table, `${table}\\multicolumn{2}{l}{\\textbf{Core Skills}}\n`);
+    expect(latex(tex).map((f) => f.token)).toEqual([MISSING]);
+  });
+
+  test("honest layouts raise no structure finding: wrapped rows, \\\\[2pt], header rows, a rule after the last row", () => {
+    expect(latex(plant("MongoDB, Datadog, Grafana", "MongoDB, Datadog,\n    Grafana"))).toEqual([]);
+    expect(latex(plant("Incident Response \\\\", "Incident Response \\\\[2pt]"))).toEqual([]);
+    expect(latex(plant("Incident Response \\\\", "Incident Response \\\\\n\\hline"))).toEqual([]);
+    expect(latex(plant(table, `${table}\\multicolumn{2}{l}{\\textbf{Core Skills}} \\\\\n`))).toEqual([]);
+    expect(latex(resume)).toEqual([]);
+  });
+});
+
+// Guidance in the MCD (target titles, preferences, notes for the resume agent)
+// says what the candidate wants, not what happened, so it backs nothing.
+describe("guidance sections are not evidence", () => {
+  test("a target title the candidate never held fails as a job title", () => {
+    expect(mcd).toContain("- Engineering Lead");
+    expect(tokens(plant("\\headingIt{Junior Software Engineer}{}", "\\headingIt{Engineering Lead}{}"), "heading")).toEqual(["Engineering Lead"]);
+  });
+
+  test("a number that only appears in Notes for Resume Customization fails", () => {
+    const noted = mcd.replace("### Metrics to Emphasize", "### Role Cutoff\n\n- Leave out roles older than 27 years\n\n### Metrics to Emphasize");
+    expect(noted).not.toBe(mcd);
+    const tex = plant("850 enterprise clients", "850 enterprise clients over 27 years");
+    expect(tokens(tex, "number", noted)).toEqual(["27"]);
+  });
+
+  test("a number that only appears in Work Preferences fails", () => {
+    expect(mcd).toContain("(100-1000 employees)");
+    expect(tokens(plant("850 enterprise clients", "850 enterprise clients and 1000 employees"), "number")).toEqual(["1000"]);
+  });
+
+  test("the same facts pass once Work Experience records them", () => {
+    const held = mcd.replace("### DataFlow Inc. -- Junior Software Engineer", "### DataFlow Inc. -- Engineering Lead\n\n### DataFlow Inc. -- Junior Software Engineer");
+    expect(tokens(plant("\\headingIt{Junior Software Engineer}{}", "\\headingIt{Engineering Lead}{}"), "heading", held)).toEqual([]);
+  });
+
+  test("a job description's own headings stay a source for a cover letter", () => {
+    const jdWithPositioning = `${jd}\n\n## Positioning\n\nThe team supports 75 regional offices.\n`;
+    const letter = cover.replace("\\end{document}", "Supporting 75 regional offices is the kind of scale I enjoy.\n\\end{document}");
+    expect(letter).not.toBe(cover);
+    expect(validate(letter, mcd, { extraSources: [jdWithPositioning] }).findings).toEqual([]);
+  });
+});
+
+// The career-break convention: a "### Career Break -- <reason>" entry under
+// Work Experience in the MCD, rendered as \headingBf{Career Break}{dates} and
+// \headingIt{<reason>}{} on the resume.
+describe("career breaks", () => {
+  const entry = "### Career Break -- Full-time study\n**June 2014 -- December 2015**\n\n- Completed an evening Spanish course\n\n";
+  const withBreak = mcd.replace("### University of Texas", `${entry}### University of Texas`);
+  const tex = plant(
+    "\\headingBf{DataFlow Inc.}",
+    "\\headingBf{Career Break}{June 2014 -- December 2015}\n  \\headingIt{Full-time study}{}\n\n  \\headingBf{DataFlow Inc.}",
+  );
+
+  test("a break heading passes when the MCD records the break", () => {
+    expect(withBreak).not.toBe(mcd);
+    expect(validate(tex, withBreak).findings).toEqual([]);
+  });
+
+  test("a break heading fails when the MCD has no such entry", () => {
+    // The example MCD shows the format only inside an HTML comment, which is
+    // never a source; outside comments it must not mention a break, or this
+    // proves nothing.
+    expect(mcd).toContain("### Career Break -- Full-time study");
+    const visible = mcd.replace(/<!--[\s\S]*?-->/g, "").toLowerCase();
+    expect(visible).not.toContain("career break");
+    expect(visible).not.toContain("full-time study");
+    expect(validate(tex, mcd).findings.map((f) => [f.kind, f.token])).toEqual([
+      ["heading", "Career Break"],
+      ["date", "June 2014"],
+      ["date", "December 2015"],
+      ["heading", "Full-time study"],
+    ]);
+  });
+
+  test("a break whose dates differ from the MCD entry fails on the dates", () => {
+    const shifted = tex.replace("{June 2014 -- December 2015}", "{June 2014 -- March 2016}");
+    expect(validate(shifted, withBreak).findings.map((f) => [f.kind, f.token])).toEqual([["date", "March 2016"]]);
+  });
+});

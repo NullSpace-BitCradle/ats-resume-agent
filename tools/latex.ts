@@ -65,7 +65,7 @@ export function stripLatex(text: string): string {
     .replace(/\\([%$&#_])/g, "$1")
     .replace(/\\[,;: !]/g, " ")
     .replace(/-{2,}/g, "-")
-    .replace(/\\fa[A-Za-z]+\\?/g, " ")
+    .replace(/\\fa[A-Za-z]+\*?\\?/g, " ")
     .replace(/\\[A-Za-z]+\*?/g, " ")
     .replace(/[{}~]/g, " ")
     .replace(/[ \t]+/g, " ")
