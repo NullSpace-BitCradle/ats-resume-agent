@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { deflateRawSync } from "node:zlib";
-import { type Converter, IngestError, ingest, iwaDecompress, readZip, rtfText, snappyDecompress } from "./ingest";
+import { CONVERTERS, type Converter, IngestError, ingest, iwaDecompress, readZip, rtfText, snappyDecompress, tidy, wordScript } from "./ingest";
 
 // Every fixture is built here from made-up text, so nothing personal is ever
 // committed and each test shows exactly what the file holds.
@@ -278,6 +278,26 @@ describe("converters and the fallback", () => {
   });
   const which = (exe: string) => (exe === "fake-tool" ? process.execPath : null);
   const doc = write("old.doc", new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]));
+
+  test("Word converts .doc only on Windows, through PowerShell", () => {
+    const word = CONVERTERS.find((c) => c.name === "Microsoft Word")!;
+    expect(word.formats).toEqual([".doc"]);
+    expect(word.executables).toEqual(process.platform === "win32" ? ["powershell.exe", "pwsh.exe"] : []);
+    expect(CONVERTERS.findIndex((c) => c.name === "Microsoft Word")).toBeLessThan(CONVERTERS.findIndex((c) => c.name === "antiword"));
+  });
+
+  test("the Word script quotes paths literally, opens read-only, and always quits Word", () => {
+    const script = wordScript("C:\\cv\\O'Brien $HOME `x`.doc", "C:\\tmp\\out.txt");
+    // resolve() makes these absolute; on Linux CI it prefixes the cwd, so check the ends.
+    expect(script).toContain("O''Brien $HOME `x`.doc', $false, $true, $false)");
+    expect(script).toMatch(/SaveAs2\('[^']*out\.txt', 2,/);
+    expect(script).toContain(", 65001)");
+    expect(script).toMatch(/finally \{ \$w\.Quit\(\) \}/);
+  });
+
+  test("a UTF-8 byte order mark from a converter is dropped", () => {
+    expect(tidy("\ufeffAlex Morgan\r\n")).toBe("Alex Morgan\n");
+  });
 
   test("a .doc goes to an installed converter", () => {
     const result = ingest(doc, { converters: [fake("fake", "console.log('Converted resume text')")], which });

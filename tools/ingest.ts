@@ -2,8 +2,8 @@
 // Turns old resumes and career documents into plain text the career-doc-builder
 // can read: .docx, .odt, .rtf, and .pages are parsed here with no dependencies;
 // .doc (and anything the built-in parsers cannot read) goes to whichever
-// converter is installed: pandoc, LibreOffice (soffice), macOS textutil,
-// antiword, or catdoc. When nothing can read a file, it says so and asks for a
+// converter is installed: pandoc, LibreOffice (soffice), Microsoft Word on
+// Windows, macOS textutil, antiword, or catdoc. When nothing can read a file, it says so and asks for a
 // PDF export instead of guessing.
 //
 // Usage: bun tools/ingest.ts <file>... [--out <dir>]
@@ -13,7 +13,7 @@
 
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, extname, join } from "node:path";
+import { basename, extname, join, resolve } from "node:path";
 import { inflateRawSync } from "node:zlib";
 
 export class IngestError extends Error {}
@@ -132,7 +132,7 @@ function xmlText(xml: string, rules: XmlRules): string {
 export function tidy(text: string): string {
   return `${text
     .replace(/\r\n?|[\u2028\u2029]/g, "\n")
-    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffc]/g, "")
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffc\ufeff]/g, "")
     .replace(/[ \t]+$/gm, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim()}\n`;
@@ -519,6 +519,28 @@ const SOFFICE_PATHS = [
   "/Applications/LibreOffice.app/Contents/MacOS/soffice",
 ];
 
+// PowerShell single-quoted strings take everything literally except a single
+// quote, which doubles.
+const psQuote = (s: string) => `'${s.replace(/'/g, "''")}'`;
+
+// Opens the file read-only in a hidden Word, saves it as UTF-8 plain text
+// (wdFormatText = 2, Encoding = 65001), and always quits Word. Word wants
+// absolute paths with backslashes.
+export function wordScript(input: string, outFile: string): string {
+  input = resolve(input);
+  outFile = resolve(outFile);
+  return [
+    "$ErrorActionPreference = 'Stop'",
+    "$w = New-Object -ComObject Word.Application",
+    "$w.Visible = $false; $w.DisplayAlerts = 0",
+    "try {",
+    `  $d = $w.Documents.Open(${psQuote(input)}, $false, $true, $false)`,
+    `  $d.SaveAs2(${psQuote(outFile)}, 2, $false, '', $false, '', $false, $false, $false, $false, $false, 65001)`,
+    "  $d.Close($false)",
+    "} finally { $w.Quit() }",
+  ].join("\n");
+}
+
 export const CONVERTERS: Converter[] = [
   {
     name: "pandoc",
@@ -540,6 +562,17 @@ export const CONVERTERS: Converter[] = [
     formats: [".doc", ".docx", ".odt", ".rtf"],
     executables: ["textutil"],
     command: (exe, input) => ({ args: [exe, "-convert", "txt", "-stdout", input], outFile: null }),
+  },
+  {
+    // Most Windows PCs have Word but none of the tools above. Word itself does
+    // the conversion through PowerShell, read-only, saving UTF-8 text.
+    name: "Microsoft Word",
+    formats: [".doc"],
+    executables: process.platform === "win32" ? ["powershell.exe", "pwsh.exe"] : [],
+    command: (exe, input, outDir) => {
+      const outFile = join(outDir, "word.txt");
+      return { args: [exe, "-NoProfile", "-NonInteractive", "-Command", wordScript(input, outFile)], outFile };
+    },
   },
   { name: "antiword", formats: [".doc"], executables: ["antiword"], command: (exe, input) => ({ args: [exe, input], outFile: null }) },
   { name: "catdoc", formats: [".doc"], executables: ["catdoc"], command: (exe, input) => ({ args: [exe, "-w", input], outFile: null }) },

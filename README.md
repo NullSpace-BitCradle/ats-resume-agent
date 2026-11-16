@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/NullSpace-BitCradle/ats-resume-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/NullSpace-BitCradle/ats-resume-agent/actions/workflows/ci.yml)
 
-> v1.3.0. Prefer the original? It is preserved as the [v1.1.0 release](https://github.com/NullSpace-BitCradle/ats-resume-agent/releases/tag/v1.1.0) and the [`v1` branch](https://github.com/NullSpace-BitCradle/ats-resume-agent/tree/v1). See [CHANGELOG.md](CHANGELOG.md) for what changed.
+> v1.3.1. Prefer the original? It is preserved as the [v1.1.0 release](https://github.com/NullSpace-BitCradle/ats-resume-agent/releases/tag/v1.1.0) and the [`v1` branch](https://github.com/NullSpace-BitCradle/ats-resume-agent/tree/v1). See [CHANGELOG.md](CHANGELOG.md) for what changed.
 
 An AI-powered resume and cover letter generator built on [Claude Code](https://code.claude.com/docs). It creates ATS-optimized, LaTeX-formatted resumes tailored to specific job descriptions. It also includes a guided career document builder that helps you create the source material through an interactive interview.
 
@@ -328,7 +328,7 @@ That writes `inputs/text/resume-2012.txt` and `inputs/text/resume-2016.txt`. Wit
 
 - **`.docx`, `.odt`, `.rtf`** with its own parsers, no other software needed. Headers come first, since resumes often keep the name and contact line there.
 - **`.pages`** best effort, also with no other software: it decodes the document's text from the file, which can carry stray style names. It also saves the image of page one (`<name>.preview.jpg`) so you can compare. The decoder was checked against real iWork files from a public test corpus, but not yet against a real Pages resume.
-- **`.doc`** (Word 97-2003) through whatever converter is installed: LibreOffice (`soffice`), pandoc, macOS `textutil`, `antiword`, or `catdoc`. On a Mac, `textutil` is built in. Elsewhere, installing [LibreOffice](https://www.libreoffice.org/) is the simplest route. The same converters are a fallback when the built-in parsers can't read a file.
+- **`.doc`** (Word 97-2003) through whatever converter is installed: LibreOffice (`soffice`), Microsoft Word on Windows, macOS `textutil`, `antiword`, or `catdoc`. On a Mac, `textutil` is built in, and on Windows an installed copy of Word does the job (opened hidden and read-only). Elsewhere, installing [LibreOffice](https://www.libreoffice.org/) is the simplest route. The same converters are a fallback when the built-in parsers can't read a file.
 - **`.pdf`, `.md`, `.txt`** need no conversion; the agents read them directly.
 
 When nothing can read a file, it says what it tried and asks you to export the document as a PDF from the app that made it, or paste the text.
@@ -528,7 +528,7 @@ On 2026-09-27, each model got the resume writer's instructions plus the example 
 
 With the original prompt, Haiku added Kafka, which appears only in the job description's tech stack, in 2 of 4 runs, and wrote `34%` instead of `34\%` (which silently cuts the rest of the line out of the PDF) in 2 of 4. The rewrite states that the job description never supplies content, puts a check on the skills table (where the padding happened), and requires escaping LaTeX special characters. Two further Haiku runs with the validator step turned on also passed, after fixing what it flagged.
 
-"Original prompt" is v1.1.0 plus this release's plugin paths and validator steps, which these runs skipped. "Rewritten prompt" covers the rewrite and one round of small review edits (summary length, tense, certification form). The v1.3.0 additions that came later (the recency rule, career breaks, general resumes, candidate folders, and the location and compile instructions) were not part of these runs. These are small samples, so treat them as a smoke test rather than a benchmark. Sonnet stays the default: Opus did no better on these checks and costs more. Either way, keep the validator step on.
+"Original prompt" is v1.1.0 plus this release's plugin paths and validator steps, which these runs skipped. "Rewritten prompt" covers the rewrite and one round of small review edits (summary length, tense, certification form). The v1.3.0 additions that came later (the recency rule, career breaks, general resumes, candidate folders, and the location and compile instructions) were not part of these runs. On 2026-11-16, Sonnet ran the v1.3.0 agents with their validator steps on: a general resume for a nurse with a career break, the Example Corp resume and cover letter, and a compile-mode MCD from an old `.doc` and a `.txt` resume. Both resumes and the letter passed the validator. The compile run found that a reason the candidate gave in their own documents was being dropped, which v1.3.1 fixes. These are small samples, so treat them as a smoke test rather than a benchmark. Sonnet stays the default: Opus did no better on these checks and costs more. Either way, keep the validator step on.
 
 If you find the agents occasionally deviating from instructions (adding unsolicited content, ignoring agent notes), start a fresh session to avoid context pollution from previous conversations. Running plain `claude` always starts a new session (only `--continue` or `--resume` pick up an old one), and `/clear` wipes the context inside a session that is already open.
 
