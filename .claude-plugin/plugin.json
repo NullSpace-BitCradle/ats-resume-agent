@@ -1,6 +1,6 @@
 {
   "name": "ats-resume-agent",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "ATS-optimized LaTeX resumes and cover letters tailored to a job description, generated only from your Master Career Document, plus a guided interview that builds that document.",
   "author": {
     "name": "NullSpace-BitCradle",

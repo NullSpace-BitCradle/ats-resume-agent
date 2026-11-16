@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.3.2: Write the resume with the file tool
+
+- Resume writer: write the `.tex` with the Write or Edit tool, never a shell heredoc, `echo`, or `printf`. In 3 of 4 real runs on 2026-11-16, a heredoc turned every `\\` row ending into `\` and the compile failed until the agent noticed
+
 ## v1.3.1: Word on Windows, and fixes from real agent runs
 
 - New: on Windows, the ingest tool reads `.doc` files through an installed copy of Word (opened hidden and read-only) when LibreOffice and antiword are missing. A UTF-8 byte order mark from any converter is dropped

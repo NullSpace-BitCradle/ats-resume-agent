@@ -1,0 +1,266 @@
+%%%%
+% Resume Template
+%%%%
+% Original Author: Michael Lustfield
+% Source: https://github.com/MTecknology/latex-resume
+% License: CC-BY-4
+% - https://creativecommons.org/licenses/by/4.0/legalcode.txt
+%
+% Modified for use with the ATS Resume Writer agent.
+% This template is ATS-compatible via Unicode glyph mapping.
+%%%%
+
+\documentclass[letterpaper,10pt]{article}
+%%%%%%%%%%%%%%%%%%%%%%%
+%% BEGIN_FILE: mteck.sty
+%% NOTE: Everything between here and END_FILE can
+%% be relocated to "mteck.sty" and then included with:
+%\usepackage{mteck}
+
+% Dependencies
+% NOTE: Some packages (lastpage, hyperref) require second build!
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage{fontawesome5}
+\usepackage{multicol}
+\usepackage{bookmark}
+\usepackage{lastpage}
+\usepackage{tabularx}
+
+
+% Sans-Serif
+%\usepackage[sfdefault]{FiraSans}
+%\usepackage[sfdefault]{roboto}
+%\usepackage[sfdefault]{noto-sans}
+%\usepackage[default]{sourcesanspro}
+
+% Serif
+\usepackage{CormorantGaramond}
+\usepackage{charter}
+
+% Colors
+% Use with \color{Name}
+% Can wrap entire heading with {\color{accent} [...] }
+\usepackage{xcolor}
+\definecolor{accentTitle}{HTML}{0e6e55}
+\definecolor{accentText}{HTML}{0e6e55}
+\definecolor{accentLine}{HTML}{a16f0b}
+
+% Misc. Options
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\urlstyle{same}
+
+% Adjust Margins
+\addtolength{\oddsidemargin}{-0.7in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1.19in}
+\addtolength{\topmargin}{-0.7in}
+\addtolength{\textheight}{1.4in}
+
+\setlength{\multicolsep}{-3.0pt}
+\setlength{\columnsep}{-1pt}
+\setlength{\tabcolsep}{0pt}
+\setlength{\footskip}{3.7pt}
+\raggedbottom
+\raggedright
+
+% ATS Readability
+\input{glyphtounicode}
+\pdfgentounicode=1
+
+%-----------------%
+% Custom Commands %
+%-----------------%
+
+% Centered title along with subtitle between HR
+% Usage: \documentTitle{Name}{Details}
+\newcommand{\documentTitle}[2]{
+  \begin{center}
+    {\Huge\color{accentTitle} #1}
+    \vspace{10pt}
+    {\color{accentLine} \hrule}
+    \vspace{2pt}
+    %{\footnotesize\color{accentTitle} #2}
+    \footnotesize{#2}
+    \vspace{2pt}
+    {\color{accentLine} \hrule}
+  \end{center}
+}
+
+% Create a footer with correct padding
+% Usage: \documentFooter{\thepage of X}
+\newcommand{\documentFooter}[1]{
+  \setlength{\footskip}{10.25pt}
+  \fancyfoot[C]{\footnotesize #1}
+}
+
+% Simple wrapper to set up page numbering
+% Usage: \numberedPages
+% WARNING: Must run pdflatex twice!
+\newcommand{\numberedPages}{
+  \documentFooter{\thepage/\pageref{LastPage}}
+}
+
+% Section heading with horizontal rule
+% Usage: \section{Title}
+\titleformat{\section}{
+  \vspace{-5pt}
+  \color{accentText}
+  \raggedright\large\bfseries
+}{}{0em}{}[\color{accentLine}\titlerule]
+
+% Section heading with separator and content on same line
+% Usage: \tinysection{Title}
+\newcommand{\tinysection}[1]{
+  \phantomsection
+  \addcontentsline{toc}{section}{#1}
+  {\large{\bfseries\color{accentText}#1} {\color{accentLine} |}}
+}
+
+% Indented line with arguments left/right aligned in document
+% Usage: \heading{Left}{Right}
+\newcommand{\heading}[2]{
+  \hspace{10pt}#1\hfill#2\\
+}
+
+% Adds \textbf to \heading
+\newcommand{\headingBf}[2]{
+  \heading{\textbf{#1}}{\textbf{#2}}
+}
+
+% Adds \textit to \heading
+\newcommand{\headingIt}[2]{
+  \heading{\textit{#1}}{\textit{#2}}
+}
+
+% Template for itemized lists
+% Usage: \begin{resume_list} [items] \end{resume_list}
+\newenvironment{resume_list}{
+  \vspace{-7pt}
+  \begin{itemize}[itemsep=-2px, parsep=1pt, leftmargin=30pt]
+}{
+  \end{itemize}
+  %\vspace{-2pt}
+}
+
+% Formats an item to use as an itemized title
+% Usage: \itemTitle{Title}
+\newcommand{\itemTitle}[1]{
+  \item[] \underline{#1}\vspace{4pt}
+}
+
+% Bullets used in itemized lists
+\renewcommand\labelitemi{--}
+
+%% END_FILE: mteck.sty
+%%%%%%%%%%%%%%%%%%%%%%
+
+
+%===================%
+%   Your Resume     %
+%===================%
+
+%\numberedPages % NOTE: lastpage requires a second build
+%\documentFooter{\thepage of 2} % Does similar without using lastpage
+\begin{document}
+
+  %---------%
+  % Heading %
+  %---------%
+
+  \documentTitle{Gerry Sanchez}{
+    Brownsville, TX 78520 ~ | ~
+    \href{tel:4802805009}{
+      \raisebox{-0.05\height} \faPhone\ 480-280-5009} ~ | ~
+    \href{mailto:gerrysanchez83@gmail.com}{
+      \raisebox{-0.15\height} \faEnvelope\ gerrysanchez83@gmail.com}
+  }
+
+  %---------%
+  % Summary %
+  %---------%
+
+  \tinysection{Summary}
+  Banking operations professional with almost two decades of experience in daily banking and credit union operations and team leadership. As Lead Operations Specialist at JP Morgan Chase, maintained operational and compliance standards within a branch setting, followed policies and procedures to minimize losses, and scheduled employees to meet branch need using Impact 360. Supervised teller operations as a Senior Teller, coached other tellers on policies, and mentored new Lead Operations Specialists. Worked as a chargeback specialist with Paymentech, reviewing documentation related to disputes.
+
+%--------%
+% Skills %
+%--------%
+
+\section{Skills}
+
+\begin{tabularx}{\textwidth}{>{\bfseries}l@{\hspace{12pt}} X}
+Banking Operations   & Branch Operations, Compliance Standards, Minimizing Losses, Teller Operations, Member Services, Financial Transactions, Loan Documentation, Accounts Payable, Foreign Exchange Reports \\
+Leadership \& Staffing   & Team Leadership, Employee Scheduling, Staffing, Coaching, Mentoring, Payroll, Confidential Records \\
+Customer Service   & Customer Service, Customer Satisfaction, Relationship Building, Sales \\
+Disputes \& Payments   & Chargebacks, Dispute Documentation Review, Arbitration Recommendations, Visa, Mastercard, Discover \\
+Tools   & Impact 360 \\
+\end{tabularx}
+
+
+  %------------%
+  % Experience %
+  %------------%
+
+  \section{Experience}
+
+  \headingBf{Career Break}{October 2019 -- Present}
+  \headingIt{Family Caregiving}{}
+
+  \headingBf{JP Morgan Chase}{October 2011 -- October 2019}
+  \headingIt{Lead Operations Specialist; Chargeback Specialist}{}
+  \begin{resume_list}
+    \item Maintained operational and compliance standards within a branch setting as the Lead Operations Specialist
+    \item Followed policies and procedures to minimize losses and maintain excellent customer satisfaction
+    \item Scheduled employees to meet branch need using Impact 360 and kept the branch's various hardware systems running properly
+    \item Mentored new Lead Operations Specialists coming into the role for the first time
+    \item Reviewed documentation related to disputes as a chargeback specialist with Paymentech and recommended arbitration when needed, using systems in place by Visa, Mastercard, and Discover
+    \item Acted as liaison between Paymentech and Square
+  \end{resume_list}
+
+  \headingBf{Desert Schools Federal Credit Union}{September 2010 -- May 2011}
+  \headingIt{Teller}{}
+  \begin{resume_list}
+    \item Performed member service duties as a teller at an in-store location
+    \item Built relationships through sales and quality service
+  \end{resume_list}
+
+  \headingBf{Valley Federal Credit Union}{June 2008 -- July 2010}
+  \headingIt{Senior Teller; Member Services Representative}{}
+  \begin{resume_list}
+    \item Performed member service duties as a senior teller and member services representative
+    \item Rotated managing a remote branch location
+    \item Led initiative to replace an outdated computer system and implemented new technology
+  \end{resume_list}
+
+  \headingBf{Best Buy}{November 2006 -- October 2007}
+  \headingIt{Operations Senior}{}
+  \begin{resume_list}
+    \item Supervised cashiers and the customer service area as the Operations Senior
+    \item Scheduled for proper staffing throughout the entire store
+    \item Submitted payroll for employees and maintained confidential records
+    \item Assisted as manager on duty for every department when needed
+  \end{resume_list}
+
+  \headingBf{Wells Fargo Bank}{August 2005 -- July 2006}
+  \headingIt{Senior Teller}{}
+  \begin{resume_list}
+    \item Performed financial transactions as a senior teller and coached other tellers on policies
+  \end{resume_list}
+
+  \headingBf{International Bank of Commerce}{September 2001 -- July 2005}
+  \headingIt{Senior Teller}{}
+  \begin{resume_list}
+    \item Supervised teller operations as a Senior Teller in a leadership position
+    \item Created a new accounts payable system and handled foreign exchange reports using various software applications
+    \item Collected insurance data for maintenance on loan documentation
+  \end{resume_list}
+
+\end{document}
